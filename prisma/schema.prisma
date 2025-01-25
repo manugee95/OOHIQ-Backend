@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  fullName   String
+  level      String   @default("Rookie") // Default level
+  profilePicture  String?   @default("https://storage.googleapis.com/postertrack-bucket-images/user.png")
+  role       Role
+  status     Boolean   @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  codes      VerificationCode[]
+  audits    Audit[]
+}
+
+// Enum to represent user roles
+enum Role {
+  FIELD_AUDITOR // User with field auditing role
+  ADMIN        // Admin user with elevated privileges
+}
+
+model VerificationCode {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  code       String
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model BillboardType {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  audits Audit[]
+}
+
+model Audit {
+  id              Int       @id @default(autoincrement())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          Int
+  billboardType   BillboardType @relation(fields: [billboardTypeId], references: [id])
+  billboardTypeId Int
+  location        String
+  closeShotUrl    String
+  longShotUrl     String
+  videoUrl        String
+  status          String    @default("pending")
+  createdAt       DateTime  @default(now())
+}
