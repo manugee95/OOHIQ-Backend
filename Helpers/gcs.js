@@ -2,6 +2,9 @@ const { Storage } = require("@google-cloud/storage");
 const fs = require("fs");
 const path = require("path");
 
+require('dotenv').config();
+
+
 // Initialize Google Cloud Storage with environment-based credentials
 const storage = new Storage({
   projectId: process.env.GCLOUD_PROJECT_ID,
