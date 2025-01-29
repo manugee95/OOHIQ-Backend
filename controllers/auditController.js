@@ -258,12 +258,12 @@ exports.startAuditProcess = async (req, res) => {
       });
     }
 
-    if (!isValidVideo) {
-      return res.status(400).json({
-        message:
-          "Video location exceeds 300 meters from the detected location.",
-      });
-    }
+    // if (!isValidVideo) {
+    //   return res.status(400).json({
+    //     message:
+    //       "Video location exceeds 300 meters from the detected location.",
+    //   });
+    // }
 
     // Add the task to the BullMQ queue for processing
     const job = await auditQueue.add("processAudit", {
