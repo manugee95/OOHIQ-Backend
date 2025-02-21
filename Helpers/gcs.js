@@ -2,8 +2,7 @@ const { Storage } = require("@google-cloud/storage");
 const fs = require("fs");
 const path = require("path");
 
-require('dotenv').config();
-
+require("dotenv").config();
 
 // Initialize Google Cloud Storage with environment-based credentials
 const storage = new Storage({
@@ -16,51 +15,63 @@ const storage = new Storage({
 
 const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
 
-// Function to upload to GCS
-const uploadToGCS = async (filePath) => {
+// Function to upload a file to Google Cloud Storage
+const uploadToGCS = async (filePath, retries = 3) => {
   return new Promise((resolve, reject) => {
-    // Validate that the filePath is a valid string
     if (!filePath || typeof filePath !== "string") {
       return reject(
         new TypeError(`Invalid file path provided for upload: ${filePath}`)
       );
     }
 
-    // Read the file into a buffer
-    fs.readFile(filePath, (err, buffer) => {
-      if (err) {
-        return reject(err);
-      }
+    // Create a unique filename
+    const uniqueFilename = `${Date.now()}${path.extname(filePath)}`;
+    const blob = bucket.file(uniqueFilename);
 
-      // Create a unique filename
-      const uniqueFilename = `${Date.now()}${path.extname(filePath)}`;
-      const blob = bucket.file(uniqueFilename);
-
-      // Create a write stream to GCS
-      const blobStream = blob.createWriteStream({
-        resumable: false,
-        contentType: "auto", // Let GCS infer the content type
-      });
-
-      // Handle stream errors
-      blobStream.on("error", (err) => {
-        reject(err);
-      });
-
-      // Resolve the public URL after upload is complete
-      blobStream.on("finish", () => {
-        blob
-          .makePublic()
-          .then(() => {
-            const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-            resolve(publicUrl);
-          })
-          .catch((err) => reject(err));
-      });
-
-      // Write the file buffer to GCS
-      blobStream.end(buffer);
+    // Create a writable stream to GCS
+    const blobStream = blob.createWriteStream({
+      resumable: true, // Allows automatic retries
+      timeout: 60000, // 60 seconds timeout
+      contentType: "auto",
     });
+
+    let attempt = 0;
+
+    // Function to retry upload on failure
+    const attemptUpload = () => {
+      attempt++;
+
+      fs.createReadStream(filePath)
+        .pipe(blobStream)
+        .on("error", async (err) => {
+          console.error(`Upload attempt ${attempt} failed: ${err.message}`);
+
+          if (attempt < retries) {
+            console.log(
+              `Retrying upload in ${Math.pow(2, attempt) * 1000}ms...`
+            );
+            setTimeout(attemptUpload, Math.pow(2, attempt) * 1000);
+          } else {
+            reject(
+              new Error(
+                `Failed to upload ${filePath} after ${retries} attempts.`
+              )
+            );
+          }
+        })
+        .on("finish", async () => {
+          try {
+            await blob.makePublic();
+            resolve(
+              `https://storage.googleapis.com/${bucket.name}/${blob.name}`
+            );
+          } catch (err) {
+            reject(err);
+          }
+        });
+    };
+
+    attemptUpload();
   });
 };
 

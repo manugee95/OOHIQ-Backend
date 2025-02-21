@@ -56,7 +56,7 @@ model Audit {
   userId          Int
   billboardType   BillboardType @relation(fields: [billboardTypeId], references: [id])
   billboardTypeId Int
-  location        String
+  location        String @unique
   closeShotUrl    String
   longShotUrl     String
   videoUrl        String
