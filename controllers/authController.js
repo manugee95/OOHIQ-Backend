@@ -1,6 +1,5 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { randomBytes } = require("crypto");
 const { PrismaClient } = require("@prisma/client");
 const { transporter } = require("../Helpers/email");
 const { uploadToGCS } = require("../Helpers/gcs");
@@ -8,86 +7,6 @@ const { uploadToGCS } = require("../Helpers/gcs");
 const prisma = new PrismaClient();
 
 //Sign up a new user
-// exports.signup = async (req, res) => {
-//   const { email, password, fullName, role } = req.body;
-
-//   // Validation
-//   if (!email || !password || !fullName || !role) {
-//     return res.status(400).json({
-//       message: "All fields (email, password, name, role) are required.",
-//     });
-//   }
-
-//   if (!/^\S+@\S+\.\S+$/.test(email)) {
-//     return res.status(400).json({ message: "Invalid email format." });
-//   }
-
-//   if (password.length < 6) {
-//     return res
-//       .status(400)
-//       .json({ message: "Password must be at least 6 characters long." });
-//   }
-
-//   // Ensure valid role value
-//   const validRoles = ["FIELD_AUDITOR", "ADMIN"];
-//   if (!validRoles.includes(role)) {
-//     return res.status(400).json({
-//       message:
-//         "Invalid role provided. Role must be either 'FIELD_AUDITOR' or 'ADMIN'.",
-//     });
-//   }
-
-//   try {
-//     // Check if user already exists
-//     const existingUser = await prisma.user.findUnique({ where: { email } });
-//     if (existingUser) {
-//       return res
-//         .status(400)
-//         .json({ message: "User already exists with this email." });
-//     }
-
-//     // Hash the password
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Create the user
-//     const newUser = await prisma.user.create({
-//       data: {
-//         email,
-//         password: hashedPassword,
-//         fullName,
-//         role,
-//       },
-//     });
-
-//     // Find the user
-//     const user = await prisma.user.findUnique({ where: { email } });
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found." });
-//     }
-
-//     // Generate a JWT token
-//     const token = jwt.sign(
-//       { id: user.id, role: user.role },
-//       process.env.JWT_SECRET,
-//       { expiresIn: "12h" }
-//     );
-
-//     res.status(201).json({
-//       message: "User registered successfully.",
-//       token,
-//       user: {
-//         id: newUser.id,
-//         email: newUser.email,
-//         name: newUser.fullName,
-//         role: newUser.role,
-//       },
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Error signing up user.", error });
-//   }
-// };
-
 exports.signup = async (req, res) => {
   const { email, password, fullName, role } = req.body;
 

@@ -44,22 +44,58 @@ model VerificationCode {
   user       User     @relation(fields: [userId], references: [id])
 }
 
+model Audit {
+  id              Int            @id @default(autoincrement())
+  user            User           @relation(fields: [userId], references: [id])
+  userId          Int
+  billboardType   BillboardType  @relation(fields: [billboardTypeId], references: [id])
+  billboardTypeId Int
+  location        String
+  advertiser      Advertiser     @relation(fields: [advertiserId], references: [id])
+  advertiserId    Int
+  industry        Industry       @relation(fields: [industryId], references: [id])
+  industryId      Int
+  category        Category       @relation(fields: [categoryId], references: [id])
+  categoryId      Int
+  brand           String
+  brandIdentifier String
+  closeShotUrl    String
+  longShotUrl     String
+  videoUrl        String
+  status          String         @default("pending")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
 model BillboardType {
   id   Int    @id @default(autoincrement())
   name String @unique
   audits Audit[]
 }
 
-model Audit {
-  id              Int       @id @default(autoincrement())
-  user            User      @relation(fields: [userId], references: [id])
-  userId          Int
-  billboardType   BillboardType @relation(fields: [billboardTypeId], references: [id])
-  billboardTypeId Int
-  location        String @unique
-  closeShotUrl    String
-  longShotUrl     String
-  videoUrl        String
-  status          String    @default("pending")
-  createdAt       DateTime  @default(now())
+model Industry {
+  id         Int       @id @default(autoincrement())
+  name       String     @unique
+  categories Category[]
+  audits Audit[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  name       String   
+  industryId Int
+  industry   Industry @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  audits Audit[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Advertiser {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
+  audits Audit[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

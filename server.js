@@ -3,6 +3,9 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes")
 const billboardRoutes = require("./routes/billboardRoutes")
 const auditRoutes = require("./routes/auditRoutes")
+const industryRoutes = require("./routes/industryRoutes")
+const categoryRoutes = require("./routes/categoryRoutes")
+const advertiserRoutes = require("./routes/advertiserRoutes")
 
 const app = express();
 require("dotenv").config();
@@ -20,6 +23,9 @@ app.use("/uploads", express.static('uploads'))
 app.use("/", authRoutes);
 app.use("/", billboardRoutes);
 app.use("/", auditRoutes);
+app.use("/", industryRoutes);
+app.use("/", categoryRoutes);
+app.use("/", advertiserRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

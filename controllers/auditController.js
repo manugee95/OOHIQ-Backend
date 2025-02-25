@@ -24,7 +24,17 @@ const auditQueue = new Queue("auditQueue", {
 });
 
 exports.startAuditProcess = async (req, res) => {
-  const { userId, billboardTypeId, latitude, longitude } = req.body;
+  const {
+    userId,
+    billboardTypeId,
+    latitude,
+    longitude,
+    advertiserId,
+    industryId,
+    categoryId,
+    brand,
+    brandIdentifier,
+  } = req.body;
   const { closeShot, longShot, video } = req.files;
 
   try {
@@ -36,7 +46,12 @@ exports.startAuditProcess = async (req, res) => {
       !longitude ||
       !closeShot ||
       !longShot ||
-      !video
+      !video ||
+      !advertiserId ||
+      !industryId ||
+      !categoryId ||
+      !brand ||
+      !brandIdentifier
     ) {
       return res.status(400).json({
         message: "All fields are required.",
@@ -65,12 +80,15 @@ exports.startAuditProcess = async (req, res) => {
     const job = await auditQueue.add("processAudit", {
       userId: parseInt(userId),
       billboardTypeId: parseInt(billboardTypeId),
+      advertiserId: parseInt(advertiserId),
+      industryId: parseInt(industryId),
+      categoryId: parseInt(categoryId),
+      brand,
+      brandIdentifier,
       detectedAddress,
       closeShotPath: closeShotFile.path,
       longShotPath: longShotFile.path,
       videoPath: videoFile.path,
-      latitude,
-      longitude,
     });
 
     return res.status(201).json({
