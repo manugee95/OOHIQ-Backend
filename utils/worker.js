@@ -20,7 +20,7 @@ const auditWorker = new Worker(
         detectedAddress,
         closeShotPath,
         longShotPath,
-        videoPath
+        videoPath,
       } = job.data;
 
       console.log(`Processing audit job ${job.id}...`);
@@ -47,6 +47,12 @@ const auditWorker = new Worker(
           longShotUrl,
           videoUrl,
         },
+      });
+
+      // Increment user's audit count
+      await prisma.user.update({
+        where: { id: parseInt(userId) },
+        data: { auditCount: { increment: 1 } },
       });
 
       console.log(`Job ${job.id} completed successfully.`);

@@ -2,6 +2,7 @@ const axios = require("axios");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { Queue } = require("bullmq");
+const userController = require("../controllers/authController")
 
 async function getDetectedAddress(latitude, longitude) {
   const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
@@ -102,5 +103,50 @@ exports.startAuditProcess = async (req, res) => {
       message: "An error occurred.",
       error: error.message || "Unknown error",
     });
+  }
+};
+
+exports.updateAuditStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body; // Status should be "approved" or "disapproved"
+
+    if (!["approved", "disapproved"].includes(status)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid status. Use 'approved' or 'disapproved'." });
+    }
+
+    // Find the audit
+    const audit = await prisma.audit.findUnique({
+      where: { id: parseInt(id) },
+      include: { user: true }, // Include user data to update stats
+    });
+
+    if (!audit) {
+      return res.status(404).json({ error: "Audit not found" });
+    }
+
+    // Update audit status
+    await prisma.audit.update({
+      where: { id: parseInt(id) },
+      data: { status },
+    });
+
+    // If approved, increment user's approved audits count
+    if (status === "approved") {
+      const user = await prisma.user.update({
+        where: { id: audit.userId },
+        data: { approvedAudits: { increment: 1 } },
+      });
+
+      // Check if user qualifies for level upgrade
+      await userController.updateUserLevel(user.id);
+    }
+
+    res.json({ message: `Audit ${status} successfully`, id, status });
+  } catch (error) {
+    console.error("Error updating audit status:", error);
+    res.status(500).json({ error: "Failed to update audit status" });
   }
 };

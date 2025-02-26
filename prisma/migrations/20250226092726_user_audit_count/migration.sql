@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "approvedAudits" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "auditCount" INTEGER NOT NULL DEFAULT 0;
