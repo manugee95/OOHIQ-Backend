@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "task" INTEGER NOT NULL DEFAULT 10;

@@ -26,6 +26,7 @@ model User {
   audits    Audit[]
   auditCount      Int      @default(0)
   approvedAudits  Int      @default(0)
+  task            Int      @default(10) //Required number of task per level 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

@@ -262,6 +262,7 @@ exports.getUser = async (req, res) => {
         role: true,
         auditCount: true,
         approvedAudits: true,
+        task: true,
       },
     });
 
@@ -345,7 +346,12 @@ exports.updateUserLevel = async (userId) => {
         if (nextLevel) {
           await prisma.user.update({
             where: { id: userId },
-            data: { level: nextLevel.name, auditCount: 0, approvedAudits: 0 },
+            data: {
+              level: nextLevel.name,
+              auditCount: 0,
+              approvedAudits: 0,
+              task: nextLevel.maxAudits,
+            },
           });
 
           console.log(`User ${userId} promoted to ${nextLevel.name}`);
