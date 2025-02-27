@@ -320,7 +320,7 @@ const LEVELS = [
   { name: "Challenger", maxAudits: 30, minApproved: 25 },
   { name: "Contender", maxAudits: 50, minApproved: 45 },
   { name: "Professional", maxAudits: 100, minApproved: 90 },
-  { name: "Ultimate", maxAudits: Infinity, minApproved: Infinity },
+  { name: "Ultimate", maxAudits: 10000, minApproved: 10000 },
 ];
 
 exports.updateUserLevel = async (userId) => {

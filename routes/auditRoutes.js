@@ -1,8 +1,10 @@
 const express = require("express");
 const multer = require("multer");
 const { authToken, authRole } = require("../middleware/auth");
-const { startAuditProcess, updateAuditStatus } = require("../controllers/auditController");
-const path = require("path");
+const {
+  startAuditProcess,
+  updateAuditStatus,
+} = require("../controllers/auditController");
 
 const router = express.Router();
 
@@ -31,6 +33,11 @@ router.post(
   startAuditProcess
 );
 
-router.put("/audit/status/:id", authToken, authRole("ADMIN"), updateAuditStatus);
+router.put(
+  "/audit/status/:id",
+  authToken,
+  authRole("ADMIN"),
+  updateAuditStatus
+);
 
 module.exports = router;
