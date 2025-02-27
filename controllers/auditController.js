@@ -3,6 +3,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { Queue } = require("bullmq");
 const { updateUserLevel } = require("../Helpers/userLevel");
+const { subDays } = require("date-fns");
 
 async function getDetectedAddress(latitude, longitude) {
   const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
@@ -167,5 +168,39 @@ exports.updateAuditStatus = async (req, res) => {
   } catch (error) {
     console.error("Error updating audit status:", error);
     res.status(500).json({ error: "Failed to update audit status" });
+  }
+};
+
+
+exports.getAudits = async (req, res) => {
+  try {
+    const { id, role } = req.user; // Assume user info is coming from authentication middleware
+
+    const sevenDaysAgo = subDays(new Date(), 7);
+
+    let audits;
+
+    if (role === "ADMIN") {
+      // Admin sees all audits
+      audits = await prisma.audit.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+    } else {
+      // Regular user sees only audits from the last 7 days
+      audits = await prisma.audit.findMany({
+        where: {
+          userId: id,
+          createdAt: {
+            gte: sevenDaysAgo, // Only fetch audits from the last 7 days
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    res.json(audits);
+  } catch (error) {
+    console.error("Error fetching audits:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch audits" });
   }
 };

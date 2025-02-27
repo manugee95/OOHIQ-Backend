@@ -1,10 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { authToken, authRole } = require("../middleware/auth");
-const {
-  startAuditProcess,
-  updateAuditStatus,
-} = require("../controllers/auditController");
+const auditController = require("../controllers/auditController");
 
 const router = express.Router();
 
@@ -30,14 +27,16 @@ router.post(
     { name: "longShot", maxCount: 1 },
     { name: "video", maxCount: 1 },
   ]),
-  startAuditProcess
+  auditController.startAuditProcess
 );
 
 router.put(
   "/audit/status/:id",
   authToken,
   authRole("ADMIN"),
-  updateAuditStatus
+  auditController.updateAuditStatus
 );
+
+router.get("/audits", authToken, auditController.getAudits);
 
 module.exports = router;
