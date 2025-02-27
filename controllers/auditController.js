@@ -2,7 +2,7 @@ const axios = require("axios");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { Queue } = require("bullmq");
-const userController = require("../controllers/authController")
+const { updateUserLevel } = require("../Helpers/userLevel");
 
 async function getDetectedAddress(latitude, longitude) {
   const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
@@ -106,6 +106,14 @@ exports.startAuditProcess = async (req, res) => {
   }
 };
 
+const PAYMENT_PER_LEVEL = {
+  Rookie: 500,
+  Challenger: 1000,
+  Contender: 1500,
+  Professional: 2000,
+  Ultimate: 3000,
+};
+
 exports.updateAuditStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -135,13 +143,24 @@ exports.updateAuditStatus = async (req, res) => {
 
     // If approved, increment user's approved audits count
     if (status === "approved") {
-      const user = await prisma.user.update({
-        where: { id: audit.userId },
-        data: { approvedAudits: { increment: 1 } },
+      const user = audit.user;
+      const paymentAmount = PAYMENT_PER_LEVEL[user.level] || 0;
+
+      // Increment user's approved audits and credit wallet
+      const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          approvedAudits: { increment: 1 },
+          walletBalance: { increment: paymentAmount },
+        },
       });
 
-      // Check if user qualifies for level upgrade
-      await userController.updateUserLevel(user.id);
+      console.log(
+        `User ${user.id} credited with ₦${paymentAmount} for approved audit.`
+      );
+
+      // Check if user qualifies for level upgrade or reset
+      await updateUserLevel(updatedUser.id);
     }
 
     res.json({ message: `Audit ${status} successfully`, id, status });

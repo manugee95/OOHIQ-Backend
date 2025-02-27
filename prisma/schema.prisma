@@ -27,6 +27,7 @@ model User {
   auditCount      Int      @default(0)
   approvedAudits  Int      @default(0)
   task            Int      @default(10) //Required number of task per level 
+  walletBalance   Int      @default(0) // New field for user's wallet balance
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
