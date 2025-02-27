@@ -174,7 +174,7 @@ exports.updateAuditStatus = async (req, res) => {
 
 exports.getAudits = async (req, res) => {
   try {
-    const { id, role } = req.user; // Assume user info is coming from authentication middleware
+    const { id, role } = req.user; 
 
     const sevenDaysAgo = subDays(new Date(), 7);
 
