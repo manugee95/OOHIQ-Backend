@@ -2,7 +2,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const { transporter } = require("../Helpers/email");
-const { uploadToGCS } = require("../Helpers/gcs");
+const { Storage } = require("@google-cloud/storage");
+const path = require("path");
 
 const prisma = new PrismaClient();
 
@@ -264,6 +265,7 @@ exports.getUser = async (req, res) => {
         approvedAudits: true,
         task: true,
         walletBalance: true,
+        level: true,
       },
     });
 
@@ -279,6 +281,44 @@ exports.getUser = async (req, res) => {
 };
 
 //Update User Account
+// Initialize Google Cloud Storage with environment-based credentials
+const storage = new Storage({
+  projectId: process.env.GCLOUD_PROJECT_ID,
+  credentials: {
+    client_email: process.env.GCLOUD_CLIENT_EMAIL,
+    private_key: process.env.GCLOUD_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  },
+});
+const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
+
+// Function to upload to GCS
+const profileToGCS = async (file) => {
+  return new Promise((resolve, reject) => {
+    const blob = bucket.file(Date.now() + path.extname(file.originalname)); // Create a unique filename
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+      contentType: file.mimetype, // Ensure the correct content type
+    });
+
+    blobStream.on("error", (err) => {
+      reject(err);
+    });
+
+    blobStream.on("finish", () => {
+      blob
+        .makePublic()
+        .then(() => {
+          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+          resolve(publicUrl);
+        })
+        .catch((err) => reject(err));
+    });
+
+    // Write the file buffer to GCS
+    blobStream.end(file.buffer);
+  });
+};
+
 exports.updateUser = async (req, res) => {
   const { id } = req.params; // User ID to update
   const { fullName } = req.body;
@@ -296,7 +336,7 @@ exports.updateUser = async (req, res) => {
     // Upload image to Google Cloud Storage using the file buffer (if provided)
     let publicUrl = userToUpdate.profilePicture;
     if (req.file) {
-      publicUrl = await uploadToGCS(req.file);
+      publicUrl = await profileToGCS(req.file);
     }
 
     // Update the user
@@ -314,4 +354,3 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ error: "Error updating user." });
   }
 };
-
