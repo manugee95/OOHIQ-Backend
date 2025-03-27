@@ -354,3 +354,44 @@ exports.updateUser = async (req, res) => {
     res.status(500).json({ error: "Error updating user." });
   }
 };
+
+exports.getFieldAuditors = async (req, res) => {
+  try {
+    let { page, limit } = req.query;
+
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch field auditors with pagination
+    const [auditors, total] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: "FIELD_AUDITOR" },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profilePicture: true,
+          level: true,
+          auditCount: true,
+          approvedAudits: true,
+        },
+        take: limit,
+        skip,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.user.count({ where: { role: "FIELD_AUDITOR" } }),
+    ]);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      auditors,
+    });
+  } catch (error) {
+    console.error("Error fetching field auditors:", error);
+    res.status(500).json({ error: "Failed to fetch field auditors" });
+  }
+};

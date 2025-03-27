@@ -7,11 +7,11 @@ const router = express.Router();
 
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
-	destination: "uploads/",
-	filename: function (req, file, cb) {
-		const ext = file.mimetype.split("/")[1];
-		cb(null, `${file.fieldname}.${ext}`);
-	},
+  destination: "uploads/",
+  filename: function (req, file, cb) {
+    const ext = file.mimetype.split("/")[1];
+    cb(null, `${file.fieldname}.${ext}`);
+  },
 });
 
 const upload = multer({ storage });
@@ -36,5 +36,13 @@ router.put(
 );
 
 router.get("/audits", authToken, auditController.getAudits);
+router.get("/audits/:id", authToken, auditController.viewAudit);
+router.get(
+  "/pending-audits",
+  authToken,
+  authRole("ADMIN"),
+  auditController.getPendingAudits
+);
+
 
 module.exports = router;

@@ -171,36 +171,169 @@ exports.updateAuditStatus = async (req, res) => {
   }
 };
 
+// exports.getAudits = async (req, res) => {
+//   try {
+//     const { id, role } = req.user;
+
+//     const sevenDaysAgo = subDays(new Date(), 7);
+
+//     let audits;
+
+//     if (role === "ADMIN") {
+//       // Admin sees all audits
+//       audits = await prisma.audit.findMany({
+//         orderBy: { createdAt: "desc" },
+//       });
+//     } else {
+//       // Regular user sees only audits from the last 7 days
+//       audits = await prisma.audit.findMany({
+//         where: {
+//           userId: id,
+//           createdAt: {
+//             gte: sevenDaysAgo, // Only fetch audits from the last 7 days
+//           },
+//         },
+//         orderBy: { createdAt: "desc" },
+//       });
+//     }
+
+//     res.json(audits);
+//   } catch (error) {
+//     console.error("Error fetching audits:", error);
+//     res.status(500).json({ success: false, error: "Failed to fetch audits" });
+//   }
+// };
 
 exports.getAudits = async (req, res) => {
   try {
-    const { id, role } = req.user; 
+    const { id, role } = req.user;
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
 
     const sevenDaysAgo = subDays(new Date(), 7);
 
-    let audits;
+    let whereCondition = {};
 
-    if (role === "ADMIN") {
-      // Admin sees all audits
-      audits = await prisma.audit.findMany({
-        orderBy: { createdAt: "desc" },
-      });
-    } else {
-      // Regular user sees only audits from the last 7 days
-      audits = await prisma.audit.findMany({
-        where: {
-          userId: id,
-          createdAt: {
-            gte: sevenDaysAgo, // Only fetch audits from the last 7 days
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      });
+    if (role !== "ADMIN") {
+      // Regular user: Only fetch audits from the last 7 days
+      whereCondition = {
+        userId: id,
+        createdAt: { gte: sevenDaysAgo },
+      };
     }
 
-    res.json(audits);
+    // Fetch audits with pagination and include user information
+    const [audits, total] = await Promise.all([
+      prisma.audit.findMany({
+        where: whereCondition,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limitNumber,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+          billboardType: { select: { name: true } },
+        },
+      }),
+      prisma.audit.count({ where: whereCondition }),
+    ]);
+
+    res.json({
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+      audits,
+    });
   } catch (error) {
     console.error("Error fetching audits:", error);
     res.status(500).json({ success: false, error: "Failed to fetch audits" });
+  }
+};
+
+exports.getPendingAudits = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Fetch audits where status is "PENDING"
+    const whereCondition = { status: "pending" };
+
+    const [pendingAudits, total] = await Promise.all([
+      prisma.audit.findMany({
+        where: whereCondition,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limitNumber,
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+          billboardType: { select: { name: true } },
+        },
+      }),
+      prisma.audit.count({ where: whereCondition }),
+    ]);
+
+    res.json({
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+      pendingAudits,
+    });
+  } catch (error) {
+    console.error("Error fetching pending audits:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Failed to fetch pending audits" });
+  }
+};
+
+exports.viewAudit = async (req, res) => {
+  try {
+    const { id } = req.params; 
+
+    // Fetch the audit including user details
+    const audit = await prisma.audit.findUnique({
+      where: { id: parseInt(id, 10) },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true, // Include user details
+          },
+        },
+        billboardType: { select: { name: true } }
+      },
+    });
+
+    // If audit is not found
+    if (!audit) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Audit not found" });
+    }
+
+    res.json({ audit });
+  } catch (error) {
+    console.error("Error fetching audit:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch audit" });
   }
 };
