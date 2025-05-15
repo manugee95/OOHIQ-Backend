@@ -171,39 +171,6 @@ exports.updateAuditStatus = async (req, res) => {
   }
 };
 
-// exports.getAudits = async (req, res) => {
-//   try {
-//     const { id, role } = req.user;
-
-//     const sevenDaysAgo = subDays(new Date(), 7);
-
-//     let audits;
-
-//     if (role === "ADMIN") {
-//       // Admin sees all audits
-//       audits = await prisma.audit.findMany({
-//         orderBy: { createdAt: "desc" },
-//       });
-//     } else {
-//       // Regular user sees only audits from the last 7 days
-//       audits = await prisma.audit.findMany({
-//         where: {
-//           userId: id,
-//           createdAt: {
-//             gte: sevenDaysAgo, // Only fetch audits from the last 7 days
-//           },
-//         },
-//         orderBy: { createdAt: "desc" },
-//       });
-//     }
-
-//     res.json(audits);
-//   } catch (error) {
-//     console.error("Error fetching audits:", error);
-//     res.status(500).json({ success: false, error: "Failed to fetch audits" });
-//   }
-// };
-
 exports.getAudits = async (req, res) => {
   try {
     const { id, role } = req.user;

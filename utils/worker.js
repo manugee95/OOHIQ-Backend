@@ -1,9 +1,14 @@
 const { Worker } = require("bullmq");
 const { uploadToGCS } = require("../Helpers/gcs");
+const {
+  convertImageToJpg,
+  convertVideoToMp4,
+} = require("../Helpers/conversion");
+const { analyzeVideoObjects } = require("../Helpers/analyzeVideo");
+const extractImageMetadata = require("../Helpers/metadata");
+const { addWatermarkToImage, videoWatermark } = require("../Helpers/watermark");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-
-require("dotenv").config();
 
 const auditWorker = new Worker(
   "auditQueue",
@@ -25,12 +30,42 @@ const auditWorker = new Worker(
 
       console.log(`Processing audit job ${job.id}...`);
 
+      //Extract metadata
+      const metadataCloseShot = await extractImageMetadata(closeShotPath);
+      const metadataLongShot = await extractImageMetadata(longShotPath);
+
+      //Convert Image and Video
+      const [closeJpg, longJpg, videoMp4] = await Promise.all([
+        convertImageToJpg(closeShotPath),
+        convertImageToJpg(longShotPath),
+        convertVideoToMp4(videoPath),
+      ]);
+
+      //Watermark with metadata and address
+      const watermarkedClose = await addWatermarkToImage(
+        closeJpg,
+        metadataCloseShot,
+        detectedAddress
+      );
+      const watermarkedLong = await addWatermarkToImage(
+        longJpg,
+        metadataLongShot,
+        detectedAddress
+      );
+      const watermarkVideo = await videoWatermark(
+        videoMp4,
+        `OOHIQ by TrueNorth Media Monitoring`
+      );
+
       //Upload files concurrently
       const [closeShotUrl, longShotUrl, videoUrl] = await Promise.all([
-        uploadToGCS(closeShotPath),
-        uploadToGCS(longShotPath),
-        uploadToGCS(videoPath),
+        uploadToGCS(watermarkedClose),
+        uploadToGCS(watermarkedLong),
+        uploadToGCS(watermarkVideo),
       ]);
+
+      // Analyze video objects
+      const objectCounts = await analyzeVideoObjects(videoMp4);
 
       //Save to database
       await prisma.audit.create({
@@ -46,6 +81,7 @@ const auditWorker = new Worker(
           closeShotUrl,
           longShotUrl,
           videoUrl,
+          objectCounts,
         },
       });
 

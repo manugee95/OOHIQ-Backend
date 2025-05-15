@@ -19,7 +19,7 @@ model User {
   password   String
   fullName   String
   level      String   @default("Rookie") // Default level
-  profilePicture  String?   @default("https://storage.googleapis.com/postertrack-bucket-images/user.png")
+  profilePicture  String?   @default("https://storage.googleapis.com/oohiq-bucket/user.png")
   role       Role
   status     Boolean   @default(true)
   codes      VerificationCode[]
@@ -67,6 +67,7 @@ model Audit {
   longShotUrl     String
   videoUrl        String
   status          String         @default("pending")
+  objectCounts    Json?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }

@@ -61,7 +61,6 @@ const uploadToGCS = async (filePath, retries = 3) => {
         })
         .on("finish", async () => {
           try {
-            await blob.makePublic();
             resolve(
               `https://storage.googleapis.com/${bucket.name}/${blob.name}`
             );
