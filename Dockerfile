@@ -5,6 +5,7 @@ FROM node:18-slim
 RUN apt-get update && \
     apt-get install -y imagemagick ffmpeg && \
     ln -s /usr/bin/convert /usr/bin/magick && \
+    npm install -g pm2 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 3. Set working directory
@@ -23,5 +24,5 @@ RUN npx prisma generate
 # 7. Expose the port your server listens on (adjust if different)
 EXPOSE 8000
 
-# 8. Start both server and worker
-CMD ["npm", "run", "start"]
+# 8. Start both processes using PM2
+CMD ["pm2-runtime", "ecosystem.config.js"]
