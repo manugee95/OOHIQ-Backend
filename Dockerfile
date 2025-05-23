@@ -16,8 +16,11 @@ RUN npm install
 # 5. Copy the rest of your application code
 COPY . .
 
-# 6. Expose the port your server listens on (adjust if different)
+# 6. Run Prisma generate
+RUN npx prisma generate
+
+# 7. Expose the port your server listens on (adjust if different)
 EXPOSE 8000
 
-# 7. Start both server and worker
+# 8. Start both server and worker
 CMD ["npm", "run", "start"]
