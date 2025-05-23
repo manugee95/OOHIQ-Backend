@@ -1,9 +1,10 @@
 # 1. Use the official lightweight Node.js image
 FROM node:18-slim
 
-# 2. Install system dependencies (ImageMagick and FFmpeg)
+# 2. Install dependencies including ImageMagick and FFmpeg
 RUN apt-get update && \
     apt-get install -y imagemagick ffmpeg && \
+    ln -s /usr/bin/convert /usr/bin/magick && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # 3. Set working directory
