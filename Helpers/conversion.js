@@ -1,5 +1,6 @@
 const fileType = require("file-type");
 const heicConvert = require("heic-convert");
+const {execSync} = require("child_process")
 const os = require("os");
 const path = require("path");
 const fs = require("fs");
@@ -16,13 +17,14 @@ const convertImageToJpg = async (inputPath) => {
 
   //Convert Iphone Images to Jpeg
   if (type && type.ext === "heic") {
-    const inputBuffer = fs.readFileSync(inputPath);
-    const outputBuffer = await heicConvert({
-      buffer: inputBuffer,
-      format: "JPEG",
-      quality: 1,
-    });
-    fs.writeFileSync(outputPath, outputBuffer);
+    // const inputBuffer = fs.readFileSync(inputPath);
+    // const outputBuffer = await heicConvert({
+    //   buffer: inputBuffer,
+    //   format: "JPEG",
+    //   quality: 1,
+    // });
+    // fs.writeFileSync(outputPath, outputBuffer);
+    execSync(`magick "${inputPath}" "${outputPath}"`)
     return outputPath;
   }
 
