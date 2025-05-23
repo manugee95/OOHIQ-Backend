@@ -30,6 +30,7 @@ model User {
   walletBalance   Int      @default(0) // New field for user's wallet balance
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  billboardEvaluation BillboardEvaluation[]
 }
 
 // Enum to represent user roles
@@ -52,9 +53,12 @@ model Audit {
   id              Int            @id @default(autoincrement())
   user            User           @relation(fields: [userId], references: [id])
   userId          Int
+  boardCode       String?        @unique
   billboardType   BillboardType  @relation(fields: [billboardTypeId], references: [id])
   billboardTypeId Int
   location        String
+  state           String
+  town            String
   advertiser      Advertiser     @relation(fields: [advertiserId], references: [id])
   advertiserId    Int
   industry        Industry       @relation(fields: [industryId], references: [id])
@@ -63,19 +67,77 @@ model Audit {
   categoryId      Int
   brand           String
   brandIdentifier String
+  boardCondition  BoardCondition  @relation(fields: [boardConditionId], references: [id])
+  boardConditionId  Int 
+  posterCondition PosterCondition @relation(fields: [posterConditionId], references: [id]) 
+  posterConditionId Int 
+  trafficSpeedId    Int  
+  trafficSpeed      TrafficSpeed  @relation(fields: [trafficSpeedId], references: [id])
+  evaluationTimeId  Int
+  evaluationTime    EvaluationTime  @relation(fields: [evaluationTimeId], references: [id])
   closeShotUrl    String
   longShotUrl     String
   videoUrl        String
   status          String         @default("pending")
   objectCounts    Json?
+  impressionScore Float 
+  sovScore        Float? 
+  billboardEvaluation   BillboardEvaluation?
+  audits          AuditHistory[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+}
+
+model AuditHistory{
+  id              Int            @id @default(autoincrement())
+  auditId         Int
+  evaluationId    Int?
+  boardCode       String?
+  billboardType String
+  location        String
+  state           String
+  town            String
+  advertiser    String 
+  industry      String
+  category      String
+  brand           String
+  brandIdentifier String
+  boardCondition  String 
+  posterCondition String 
+  trafficSpeed    String   
+  evaluationTime  String 
+  closeShotUrl    String
+  longShotUrl     String
+  videoUrl        String
+  objectCounts    Json
+  impressionScore Float 
+  sovScore        Float? 
+  ltsScore        Float?
+  siteScore       Float?
+  siteGrade       String?
+  audit           Audit @relation(fields: [auditId], references: [id])
+  evaluation      BillboardEvaluation? @relation(fields: [evaluationId], references: [id])
+  createdAt       DateTime       @default(now())
 }
 
 model BillboardType {
   id   Int    @id @default(autoincrement())
   name String @unique
   audits Audit[]
+
+  competitiveEvaluation   CompetitiveBoardType[]
+}
+
+model BoardCondition{
+  id            Int @id @default(autoincrement())
+  name          String 
+  audits        Audit[]
+}
+
+model PosterCondition{
+  id            Int @id @default(autoincrement())
+  name          String 
+  audits        Audit[]
 }
 
 model Industry {
@@ -83,8 +145,6 @@ model Industry {
   name       String     @unique
   categories Category[]
   audits Audit[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
 }
 
 model Category {
@@ -93,14 +153,125 @@ model Category {
   industryId Int
   industry   Industry @relation(fields: [industryId], references: [id], onDelete: Cascade)
   audits Audit[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
 }
 
 model Advertiser {
   id         Int      @id @default(autoincrement())
   name       String   @unique
   audits Audit[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+}
+
+model BillboardEvaluation{
+  id                Int     @id @default(autoincrement())
+  uploadedBy        Int 
+  fieldAuditor      User @relation(fields: [uploadedBy], references: [id])
+  phone             String?
+  boardNo           Int?
+  contractorName    String?
+  roadTypeId        Int  
+  roadType          RoadType @relation(fields: [roadTypeId], references: [id])
+  vehicularTrafficId  Int 
+  vehicularTraffic  VehicularTraffic  @relation(fields: [vehicularTrafficId], references: [id])
+  pedestrianTrafficId Int  
+  pedestrianTraffic PedestrianTraffic @relation(fields: [pedestrianTrafficId], references: [id])
+  distanceOfVisibilityId  Int 
+  distanceOfVisibility  DistanceOfVisibility  @relation(fields: [distanceOfVisibilityId], references: [id]) 
+  boardPositioningId Int 
+  boardPositioning  BoardPositioning  @relation(fields: [boardPositioningId], references: [id]) 
+  boardLevelId      Int 
+  boardLevel        BoardLevel  @relation(fields: [boardLevelId], references: [id]) 
+  visibilityPointsId  Int 
+  visibilityPoints  VisibilityPoints  @relation(fields: [visibilityPointsId], references: [id]) 
+  specialFeaturesId   Int  
+  specialFeatures   SpecialFeatures   @relation(fields: [specialFeaturesId], references: [id]) 
+  noOfBoardsInViewId  Int 
+  noOfBoardsInView  NoOfBoardsInView  @relation(fields: [noOfBoardsInViewId], references: [id]) 
+  noOfCompetitiveBoardsId  Int 
+  noOfCompetitiveBoards  NoOfCompetitiveBoards  @relation(fields: [noOfCompetitiveBoardsId], references: [id]) 
+  noOfLargerBoardsId  Int 
+  noOfLargerBoards  NoOfLargerBoards  @relation(fields: [noOfLargerBoardsId], references: [id])
+  competitiveBoardTypes   CompetitiveBoardType[]
+  ltsScore          Float
+  siteScore         Float?
+  siteGrade         String?
+  auditId           Int     @unique
+  audit             Audit?   @relation(fields: [auditId], references: [id])
+  audits            AuditHistory[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model RoadType{
+  id            Int @id @default(autoincrement())
+  name          String
+  billboardEvaluation BillboardEvaluation[]
+}
+model VehicularTraffic{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model PedestrianTraffic{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model TrafficSpeed{
+  id            Int @id @default(autoincrement())
+  name          String 
+  audits        Audit[]
+}
+model EvaluationTime{
+  id            Int @id @default(autoincrement())
+  name          String 
+  audits        Audit[]
+}
+model DistanceOfVisibility{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model BoardPositioning{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model BoardLevel{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model VisibilityPoints{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model SpecialFeatures{
+  id            Int @id @default(autoincrement())
+  name          String
+  billboardEvaluation BillboardEvaluation[] 
+}
+model NoOfBoardsInView{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model NoOfCompetitiveBoards{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+model NoOfLargerBoards{
+  id            Int @id @default(autoincrement())
+  name          String 
+  billboardEvaluation BillboardEvaluation[]
+}
+
+model CompetitiveBoardType{
+  id          Int   @id @default(autoincrement())
+  billboardEvaluationId     Int
+  billboardTypeId           Int 
+
+  billboardEvaluation       BillboardEvaluation @relation(fields: [billboardEvaluationId], references: [id])
+  billboardType             BillboardType   @relation(fields: [billboardTypeId], references: [id])
 }

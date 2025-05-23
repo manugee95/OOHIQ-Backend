@@ -1,31 +1,39 @@
 const express = require("express");
 const cors = require("cors");
-const authRoutes = require("./routes/authRoutes")
-const billboardRoutes = require("./routes/billboardRoutes")
-const auditRoutes = require("./routes/auditRoutes")
-const industryRoutes = require("./routes/industryRoutes")
-const categoryRoutes = require("./routes/categoryRoutes")
-const advertiserRoutes = require("./routes/advertiserRoutes")
+const authRoutes = require("./routes/authRoutes");
+const billboardRoutes = require("./routes/billboardRoutes");
+const auditRoutes = require("./routes/auditRoutes");
+const industryRoutes = require("./routes/industryRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const advertiserRoutes = require("./routes/advertiserRoutes");
+const evaluationParametersRoutes = require("./routes/evaluationParametersRoutes");
+const billboardEvaluationRoutes = require("./routes/billboardEvaluationRoutes");
 
 const app = express();
 require("dotenv").config();
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5000", "https://oohiq-frontend-gl9w.vercel.app"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5000",
+      "https://oohiq-frontend-gl9w.vercel.app",
+    ],
     allowedHeaders: ["Content-Type", "Authorization", "auth-token"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   })
 );
 
 app.use(express.json());
-app.use("/uploads", express.static('uploads'))
+app.use("/uploads", express.static("uploads"));
 app.use("/", authRoutes);
 app.use("/", billboardRoutes);
 app.use("/", auditRoutes);
 app.use("/", industryRoutes);
 app.use("/", categoryRoutes);
 app.use("/", advertiserRoutes);
+app.use("/", evaluationParametersRoutes);
+app.use("/", billboardEvaluationRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

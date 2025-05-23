@@ -8,7 +8,7 @@ exports.createBoardType = async (req, res) => {
   }
 
   try {
-    const board = await prisma.BillboardType.create({
+    const board = await prisma.billboardType.create({
       data: {
         name,
       },
@@ -22,7 +22,7 @@ exports.createBoardType = async (req, res) => {
 
 exports.getboard = async (req, res) => {
   try {
-    const board = await prisma.BillboardType.findMany();
+    const board = await prisma.billboardType.findMany();
     res.json(board);
   } catch (err) {
     res.status(500).json({ error: "Server error" });

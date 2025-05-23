@@ -7,6 +7,7 @@ const {
 const { analyzeVideoObjects } = require("../Helpers/analyzeVideo");
 const extractImageMetadata = require("../Helpers/metadata");
 const { addWatermarkToImage, videoWatermark } = require("../Helpers/watermark");
+const { impressionScore } = require("../Helpers/impressions");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -20,9 +21,15 @@ const auditWorker = new Worker(
         advertiserId,
         industryId,
         categoryId,
+        boardConditionId,
+        posterConditionId,
+        trafficSpeedId,
+        evaluationTimeId,
         brand,
         brandIdentifier,
         detectedAddress,
+        state,
+        town,
         closeShotPath,
         longShotPath,
         videoPath,
@@ -67,21 +74,105 @@ const auditWorker = new Worker(
       // Analyze video objects
       const objectCounts = await analyzeVideoObjects(videoMp4);
 
-      //Save to database
-      await prisma.audit.create({
+      //Get Name values
+      const [
+        trafficSpeed,
+        evaluationTime,
+        advertiser,
+        industry,
+        category,
+        boardCondition,
+        posterCondition,
+        billboardType
+      ] = await Promise.all([
+        prisma.trafficSpeed.findUnique({
+          where: { id: parseInt(trafficSpeedId) },
+          select: { name: true },
+        }),
+        prisma.evaluationTime.findUnique({
+          where: { id: parseInt(evaluationTimeId) },
+          select: { name: true },
+        }),
+        prisma.advertiser.findUnique({
+          where: { id: parseInt(advertiserId) },
+          select: { name: true },
+        }),
+        prisma.industry.findUnique({
+          where: { id: parseInt(industryId) },
+          select: { name: true },
+        }),
+        prisma.category.findUnique({
+          where: { id: parseInt(categoryId) },
+          select: { name: true },
+        }),
+        prisma.boardCondition.findUnique({
+          where: { id: parseInt(boardConditionId) },
+          select: { name: true },
+        }),
+        prisma.posterCondition.findUnique({
+          where: { id: parseInt(posterConditionId) },
+          select: { name: true },
+        }),
+        prisma.billboardType.findUnique({
+          where: { id: parseInt(billboardTypeId) },
+          select: { name: true },
+        }),
+      ]);
+
+      //Calculate Impressions
+      const impression = impressionScore({
+        trafficSpeed: trafficSpeed.name,
+        evaluationTime: evaluationTime.name,
+        objectCounts,
+      });
+
+      //Save to Audit Table
+      const newAudit = await prisma.audit.create({
         data: {
           userId,
           billboardTypeId,
           advertiserId,
           industryId,
           categoryId,
+          boardConditionId,
+          posterConditionId,
+          trafficSpeedId,
+          evaluationTimeId,
           brand,
           brandIdentifier,
           location: detectedAddress,
+          state,
+          town,
           closeShotUrl,
           longShotUrl,
           videoUrl,
           objectCounts,
+          impressionScore: impression,
+        },
+      });
+
+      //Save snapshot in Audit History
+      await prisma.auditHistory.create({
+        data: {
+          auditId: newAudit.id,
+          billboardType: billboardType.name,
+          advertiser: advertiser.name,
+          industry: industry.name,
+          category: category.name,
+          boardCondition: boardCondition.name,
+          posterCondition: posterCondition.name,
+          trafficSpeed: trafficSpeed.name,
+          evaluationTime: evaluationTime.name,
+          location: newAudit.location,
+          state:  newAudit.state,
+          town: newAudit.town,
+          brand:  newAudit.brand,
+          brandIdentifier: newAudit.brandIdentifier,
+          closeShotUrl: newAudit.closeShotUrl,
+          longShotUrl: newAudit.longShotUrl,
+          videoUrl: newAudit.videoUrl,
+          objectCounts: newAudit.objectCounts,
+          impressionScore: newAudit.impressionScore
         },
       });
 
