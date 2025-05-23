@@ -1,5 +1,5 @@
 const { Worker } = require("bullmq");
-const { uploadToGCS } = require("../Helpers/gcs");
+const { uploadToGCS, convertToGcsUri } = require("../Helpers/gcs");
 const {
   convertImageToJpg,
   convertVideoToMp4,
@@ -72,7 +72,8 @@ const auditWorker = new Worker(
       ]);
 
       // Analyze video objects
-      const objectCounts = await analyzeVideoObjects(videoMp4);
+      const gcsUri = convertToGcsUri(videoUrl)
+      const objectCounts = await analyzeVideoObjects(gcsUri);
 
       //Get Name values
       const [

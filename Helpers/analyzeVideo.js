@@ -1,13 +1,10 @@
 const vision = require("@google-cloud/video-intelligence").v1;
-const fs = require("fs");
 
-async function analyzeVideoObjects(videoPath) {
+async function analyzeVideoObjects(gcsUri) {
   const client = new vision.VideoIntelligenceServiceClient();
 
-  const inputContent = fs.readFileSync(videoPath);
-
   const request = {
-    inputContent: inputContent.toString("base64"),
+    inputUri: gcsUri,
     features: ["OBJECT_TRACKING"],
   };
 

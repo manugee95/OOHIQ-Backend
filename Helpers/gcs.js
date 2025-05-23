@@ -74,4 +74,14 @@ const uploadToGCS = async (filePath, retries = 3) => {
   });
 };
 
-module.exports = { uploadToGCS };
+function convertToGcsUri(publicUrl) {
+  const match = publicUrl.match(
+    /https:\/\/storage\.googleapis\.com\/([^/]+)\/(.+)/
+  );
+  if (!match) {
+    throw new Error(`Invalid GCS public URL format: ${publicUrl}`);
+  }
+  return `gs://${match[1]}/${match[2]}`;
+}
+
+module.exports = { uploadToGCS, convertToGcsUri };
