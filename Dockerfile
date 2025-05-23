@@ -1,0 +1,23 @@
+# 1. Use the official lightweight Node.js image
+FROM node:18-slim
+
+# 2. Install system dependencies (ImageMagick and FFmpeg)
+RUN apt-get update && \
+    apt-get install -y imagemagick ffmpeg && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# 3. Set working directory
+WORKDIR /app
+
+# 4. Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# 5. Copy the rest of your application code
+COPY . .
+
+# 6. Expose the port your server listens on (adjust if different)
+EXPOSE 8000
+
+# 7. Start both server and worker
+CMD ["npm", "run", "start"]
