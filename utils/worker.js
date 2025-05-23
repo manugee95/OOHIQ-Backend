@@ -42,11 +42,16 @@ const auditWorker = new Worker(
       const metadataLongShot = await extractImageMetadata(longShotPath);
 
       //Convert Image and Video
-      const [closeJpg, longJpg, videoMp4] = await Promise.all([
-        convertImageToJpg(closeShotPath),
-        convertImageToJpg(longShotPath),
-        convertVideoToMp4(videoPath),
-      ]);
+
+      // const [closeJpg, longJpg, videoMp4] = await Promise.all([
+      //   convertImageToJpg(closeShotPath),
+      //   convertImageToJpg(longShotPath),
+      //   convertVideoToMp4(videoPath),
+      // ]);
+
+      const closeJpg = await convertImageToJpg(closeShotPath)
+      const longJpg = await convertImageToJpg(longShotPath)
+      const videoMp4 = await convertVideoToMp4(videoPath)
 
       //Watermark with metadata and address
       const watermarkedClose = await addWatermarkToImage(
@@ -65,11 +70,16 @@ const auditWorker = new Worker(
       );
 
       //Upload files concurrently
-      const [closeShotUrl, longShotUrl, videoUrl] = await Promise.all([
-        uploadToGCS(watermarkedClose),
-        uploadToGCS(watermarkedLong),
-        uploadToGCS(watermarkVideo),
-      ]);
+      
+      // const [closeShotUrl, longShotUrl, videoUrl] = await Promise.all([
+      //   uploadToGCS(watermarkedClose),
+      //   uploadToGCS(watermarkedLong),
+      //   uploadToGCS(watermarkVideo),
+      // ]);
+
+      const closeShotUrl = await uploadToGCS(watermarkedClose)
+      const longShotUrl = await uploadToGCS(watermarkedLong)
+      const videoUrl = await uploadToGCS(watermarkVideo)
 
       // Analyze video objects
       const gcsUri = convertToGcsUri(videoUrl)
