@@ -41,10 +41,9 @@ const auditWorker = new Worker(
       const metadataCloseShot = await extractImageMetadata(closeShotPath);
       const metadataLongShot = await extractImageMetadata(longShotPath);
 
-      //Convert Image and Video
-      const closeJpg = await convertImageToJpg(closeShotPath)
-      const longJpg = await convertImageToJpg(longShotPath)
-      const videoMp4 = await convertVideoToMp4(videoPath)
+      //Convert Image
+      const closeJpg = await convertImageToJpg(closeShotPath);
+      const longJpg = await convertImageToJpg(longShotPath);
 
       //Watermark with metadata and address
       const watermarkedClose = await addWatermarkToImage(
@@ -57,18 +56,35 @@ const auditWorker = new Worker(
         metadataLongShot,
         detectedAddress
       );
-      // const watermarkVideo = await videoWatermark(
-      //   videoMp4,
-      //   `OOHIQ by TrueNorth Media Monitoring`
-      // );
 
       //Upload files concurrently
-      const closeShotUrl = await uploadToGCS(watermarkedClose)
-      const longShotUrl = await uploadToGCS(watermarkedLong)
-      const videoUrl = await uploadToGCS(videoMp4)
+      const closeShotUrl = await uploadToGCS(watermarkedClose);
+      const longShotUrl = await uploadToGCS(watermarkedLong);
+      const rawVideoUrl = await uploadToGCS(videoPath);
+
+      const convertAndWatermarkServiceUrl =
+        "https://process-video-714918758794.us-central1.run.app";
+
+      const response = await fetch(convertAndWatermarkServiceUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoUrl: rawVideoUrl,
+          topText: "OOHIQ by TrueNorth Media Monitoring",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("GCF Error:", response.status, errorText);
+        throw new Error("Failed to process video via GCF");
+      }
+
+      const { processedVideoUrl } = await response.json();
+      const videoUrl = processedVideoUrl;
 
       // Analyze video objects
-      const gcsUri = convertToGcsUri(videoUrl)
+      const gcsUri = convertToGcsUri(videoUrl);
       const objectCounts = await analyzeVideoObjects(gcsUri);
 
       //Get Name values
@@ -80,7 +96,7 @@ const auditWorker = new Worker(
         category,
         boardCondition,
         posterCondition,
-        billboardType
+        billboardType,
       ] = await Promise.all([
         prisma.trafficSpeed.findUnique({
           where: { id: parseInt(trafficSpeedId) },
@@ -161,15 +177,15 @@ const auditWorker = new Worker(
           trafficSpeed: trafficSpeed.name,
           evaluationTime: evaluationTime.name,
           location: newAudit.location,
-          state:  newAudit.state,
+          state: newAudit.state,
           town: newAudit.town,
-          brand:  newAudit.brand,
+          brand: newAudit.brand,
           brandIdentifier: newAudit.brandIdentifier,
           closeShotUrl: newAudit.closeShotUrl,
           longShotUrl: newAudit.longShotUrl,
           videoUrl: newAudit.videoUrl,
           objectCounts: newAudit.objectCounts,
-          impressionScore: newAudit.impressionScore
+          impressionScore: newAudit.impressionScore,
         },
       });
 
