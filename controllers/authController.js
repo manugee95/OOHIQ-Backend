@@ -81,6 +81,7 @@ exports.signup = async (req, res) => {
         name: newUser.fullName,
         role: newUser.role,
       },
+      google_api_key: process.env.GOOGLE_MAPS_API_KEY 
     });
   } catch (error) {
     console.error(error);
@@ -139,6 +140,7 @@ exports.login = async (req, res) => {
         level: user.level,
         role: user.role,
       },
+      google_api_key: process.env.GOOGLE_MAPS_API_KEY 
     });
   } catch (error) {
     console.error(error);
