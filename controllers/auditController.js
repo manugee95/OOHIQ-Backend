@@ -19,11 +19,12 @@ async function getDetectedAddress(latitude, longitude) {
   const addressComponents = response.data.results[0]?.address_components;
 
   if (!addressComponents) {
-    return { state: "Unknown", city: "Unknown" };
+    return { state: "Unknown", city: "Unknown", country: "Unknown" };
   }
 
   let city = "Unknown";
   let state = "Unknown";
+  let country = "Unknown";
 
   for (const component of addressComponents) {
     if (component.types.includes("administrative_area_level_1")) {
@@ -35,9 +36,12 @@ async function getDetectedAddress(latitude, longitude) {
     ) {
       city = component.long_name;
     }
+    if (component.types.includes("country")) {
+      country = component.long_name;
+    }
   }
 
-  return { address, state, city };
+  return { address, state, city, country };
 }
 
 const auditQueue = new Queue("auditQueue", {
@@ -66,6 +70,9 @@ exports.startAuditProcess = async (req, res) => {
     evaluationTimeId,
   } = req.body;
   const { closeShot, longShot, video } = req.files;
+
+  let geolocation = [];
+  geolocation.push({ latitude, longitude });
 
   try {
     // Validate inputs
@@ -101,6 +108,7 @@ exports.startAuditProcess = async (req, res) => {
     const detectedAddress = addressInfo.address;
     const state = addressInfo.state;
     const town = addressInfo.city;
+    const country = addressInfo.country;
 
     // Check if location already exists
     const existingAudit = await prisma.audit.findFirst({
@@ -129,6 +137,8 @@ exports.startAuditProcess = async (req, res) => {
       detectedAddress,
       state,
       town,
+      country,
+      geolocation,
       closeShotPath: closeShotFile.path,
       longShotPath: longShotFile.path,
       videoPath: videoFile.path,
@@ -226,7 +236,7 @@ exports.updateAuditStatus = async (req, res) => {
 exports.getAudits = async (req, res) => {
   try {
     const { id, role } = req.user;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, country = "Nigeria" } = req.query;
 
     const pageNumber = parseInt(page, 10) || 1;
     const limitNumber = parseInt(limit, 10) || 10;
@@ -236,7 +246,12 @@ exports.getAudits = async (req, res) => {
 
     let whereCondition = {};
 
-    if (role !== "ADMIN") {
+    if (role === "ADMIN") {
+      //Admins filter: By selected country
+      whereCondition = {
+        country: country,
+      };
+    } else {
       // Regular user: Only fetch audits from the last 7 days
       whereCondition = {
         userId: id,
@@ -267,7 +282,9 @@ exports.getAudits = async (req, res) => {
           posterCondition: { select: { name: true } },
           trafficSpeed: { select: { name: true } },
           evaluationTime: { select: { name: true } },
-          billboardEvaluation: {select: {ltsScore: true, siteScore: true, siteGrade: true}}
+          billboardEvaluation: {
+            select: { ltsScore: true, siteScore: true, siteGrade: true },
+          },
         },
       }),
       prisma.audit.count({ where: whereCondition }),
@@ -288,7 +305,8 @@ exports.getAudits = async (req, res) => {
 
 exports.getPendingAudits = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, country = "Nigeria" } = req.query;
+    const { role } = req.user;
 
     const pageNumber = parseInt(page, 10) || 1;
     const limitNumber = parseInt(limit, 10) || 10;
@@ -296,6 +314,10 @@ exports.getPendingAudits = async (req, res) => {
 
     // Fetch audits where status is "PENDING"
     const whereCondition = { status: "pending" };
+
+    if (role === "ADMIN" || "MODERATOR") {
+      whereCondition.country = country;
+    }
 
     const [pendingAudits, total] = await Promise.all([
       prisma.audit.findMany({

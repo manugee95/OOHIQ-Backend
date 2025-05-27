@@ -14,6 +14,7 @@ const {
   scoreVisibilityPoints,
 } = require("../Helpers/lts");
 const { gradeSite } = require("../Helpers/siteGrade");
+const { calculateSovScore } = require("../Helpers/sov");
 
 //Weighting by Section
 const weights = {
@@ -207,7 +208,7 @@ exports.evaluateBillboard = async (req, res) => {
       include: { billboardType: true },
     });
 
-    const clientBoard = clientAudit.billboardType.id;
+    const clientBoard = clientAudit.billboardType.name;
 
     if (!clientBoard) {
       return res.status(404).json("Client Board Type not found");
@@ -217,14 +218,18 @@ exports.evaluateBillboard = async (req, res) => {
       where: { billboardEvaluationId: evaluation.id },
       select: { billboardTypeId: true },
     });
-    const totalCompetitors = competitiveBoards.length;
 
-    //Count how many matches client board type
-    const matchingCount = competitiveBoards.filter(
-      (b) => b.billboardTypeId === clientBoard
-    ).length;
+    const competitorTypeIds = competitiveBoards.map((b) => b.billboardTypeId);
+    const competitorBoardTypes = await prisma.billboardType.findMany({
+      where: {
+        id: { in: competitorTypeIds },
+      },
+      select: { name: true },
+    });
 
-    const sovScore = (matchingCount / totalCompetitors) * 100;
+    const allBoardNames = [...competitorBoardTypes.map((b) => b.name)];
+
+    const sovScore = calculateSovScore(clientBoard, allBoardNames);
 
     //Set SOV score in the audit table
     await prisma.audit.update({

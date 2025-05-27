@@ -2,8 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const { transporter } = require("../Helpers/email");
-const { Storage } = require("@google-cloud/storage");
-const path = require("path");
+const { profileToGCS } = require("../Helpers/gcs");
 
 const prisma = new PrismaClient();
 
@@ -81,7 +80,7 @@ exports.signup = async (req, res) => {
         name: newUser.fullName,
         role: newUser.role,
       },
-      google_api_key: process.env.GOOGLE_MAPS_API_KEY 
+      google_api_key: process.env.GOOGLE_MAPS_API_KEY,
     });
   } catch (error) {
     console.error(error);
@@ -140,7 +139,7 @@ exports.login = async (req, res) => {
         level: user.level,
         role: user.role,
       },
-      google_api_key: process.env.GOOGLE_MAPS_API_KEY 
+      google_api_key: process.env.GOOGLE_MAPS_API_KEY,
     });
   } catch (error) {
     console.error(error);
@@ -283,44 +282,6 @@ exports.getUser = async (req, res) => {
 };
 
 //Update User Account
-// Initialize Google Cloud Storage with environment-based credentials
-const storage = new Storage({
-  projectId: process.env.GCLOUD_PROJECT_ID,
-  credentials: {
-    client_email: process.env.GCLOUD_CLIENT_EMAIL,
-    private_key: process.env.GCLOUD_PRIVATE_KEY.replace(/\\n/g, "\n"),
-  },
-});
-const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
-
-// Function to upload to GCS
-const profileToGCS = async (file) => {
-  return new Promise((resolve, reject) => {
-    const blob = bucket.file(Date.now() + path.extname(file.originalname)); // Create a unique filename
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-      contentType: file.mimetype, // Ensure the correct content type
-    });
-
-    blobStream.on("error", (err) => {
-      reject(err);
-    });
-
-    blobStream.on("finish", () => {
-      blob
-        .makePublic()
-        .then(() => {
-          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-          resolve(publicUrl);
-        })
-        .catch((err) => reject(err));
-    });
-
-    // Write the file buffer to GCS
-    blobStream.end(file.buffer);
-  });
-};
-
 exports.updateUser = async (req, res) => {
   const { id } = req.params; // User ID to update
   const { fullName } = req.body;
@@ -354,6 +315,22 @@ exports.updateUser = async (req, res) => {
   } catch (error) {
     console.error("Error updating user:", error);
     res.status(500).json({ error: "Error updating user." });
+  }
+};
+
+exports.saveUserToken = async (req, res) => {
+  try {
+    const { pushToken } = req.body;
+    const userId = req.user.id;
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { pushToken },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to save Push Token" });
   }
 };
 

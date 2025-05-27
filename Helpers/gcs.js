@@ -15,6 +15,34 @@ const storage = new Storage({
 
 const bucket = storage.bucket(process.env.GCLOUD_BUCKET_NAME);
 
+// Function to upload Profile Picture to GCS
+const profileToGCS = async (file) => {
+  return new Promise((resolve, reject) => {
+    const blob = bucket.file(Date.now() + path.extname(file.originalname)); // Create a unique filename
+    const blobStream = blob.createWriteStream({
+      resumable: false,
+      contentType: file.mimetype, // Ensure the correct content type
+    });
+
+    blobStream.on("error", (err) => {
+      reject(err);
+    });
+
+    blobStream.on("finish", () => {
+      blob
+        .makePublic()
+        .then(() => {
+          const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
+          resolve(publicUrl);
+        })
+        .catch((err) => reject(err));
+    });
+
+    // Write the file buffer to GCS
+    blobStream.end(file.buffer);
+  });
+};
+
 // Function to upload a file to Google Cloud Storage
 const uploadToGCS = async (filePath, retries = 3) => {
   return new Promise((resolve, reject) => {
@@ -84,4 +112,4 @@ function convertToGcsUri(publicUrl) {
   return `gs://${match[1]}/${match[2]}`;
 }
 
-module.exports = { uploadToGCS, convertToGcsUri };
+module.exports = { uploadToGCS, convertToGcsUri, profileToGCS };

@@ -1,13 +1,13 @@
 const { Worker } = require("bullmq");
 const { uploadToGCS, convertToGcsUri } = require("../Helpers/gcs");
-const {
-  convertImageToJpg,
-  convertVideoToMp4,
-} = require("../Helpers/conversion");
 const { analyzeVideoObjects } = require("../Helpers/analyzeVideo");
 const extractImageMetadata = require("../Helpers/metadata");
-const { addWatermarkToImage, videoWatermark } = require("../Helpers/watermark");
+const { addWatermarkToImage } = require("../Helpers/watermark");
+const { convertImageToJpg } = require("../Helpers/conversion");
 const { impressionScore } = require("../Helpers/impressions");
+const {
+  sendNewAuditNotification,
+} = require("../services/expoNotificationService");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
@@ -30,6 +30,8 @@ const auditWorker = new Worker(
         detectedAddress,
         state,
         town,
+        country,
+        geolocation,
         closeShotPath,
         longShotPath,
         videoPath,
@@ -62,6 +64,7 @@ const auditWorker = new Worker(
       const longShotUrl = await uploadToGCS(watermarkedLong);
       const rawVideoUrl = await uploadToGCS(videoPath);
 
+      //Google cloud function to convert and watermark video
       const convertAndWatermarkServiceUrl =
         "https://process-video-714918758794.us-central1.run.app";
 
@@ -156,6 +159,8 @@ const auditWorker = new Worker(
           location: detectedAddress,
           state,
           town,
+          country,
+          geolocation,
           closeShotUrl,
           longShotUrl,
           videoUrl,
@@ -179,6 +184,8 @@ const auditWorker = new Worker(
           location: newAudit.location,
           state: newAudit.state,
           town: newAudit.town,
+          country: newAudit.country,
+          geolocation: newAudit.geolocation,
           brand: newAudit.brand,
           brandIdentifier: newAudit.brandIdentifier,
           closeShotUrl: newAudit.closeShotUrl,
@@ -188,6 +195,9 @@ const auditWorker = new Worker(
           impressionScore: newAudit.impressionScore,
         },
       });
+
+      //Send Billboard Evaluation Notification
+      await sendNewAuditNotification();
 
       // Increment user's audit count
       await prisma.user.update({

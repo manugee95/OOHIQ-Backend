@@ -1,7 +1,6 @@
 const os = require("os");
 const path = require("path");
 const sharp = require("sharp");
-const ffmpeg = require("fluent-ffmpeg");
 
 async function addWatermarkToImage(inputPath, metadata, address) {
   const image = sharp(inputPath);
@@ -58,28 +57,4 @@ async function addWatermarkToImage(inputPath, metadata, address) {
   return outputPath;
 }
 
-async function videoWatermark(videoPath, topText) {
-  const outputPath = path.join(os.tmpdir(), `${Date.now()}_watermarked.mp4`);
-  return new Promise((resolve, reject) => {
-    ffmpeg(videoPath)
-      .videoFilters([
-        {
-          filter: "drawtext",
-          options: {
-            fontfile: "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            text: topText,
-            fontcolor: "green",
-            fontsize: 15,
-            x: 10,
-            y: 10,
-          },
-        },
-      ])
-      .output(outputPath)
-      .on("end", () => resolve(outputPath))
-      .on("error", reject)
-      .run();
-  });
-}
-
-module.exports = { addWatermarkToImage, videoWatermark };
+module.exports = { addWatermarkToImage };

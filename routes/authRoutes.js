@@ -22,5 +22,6 @@ router.put(
   upload.single("profilePicture"),
   userController.updateUser
 );
+router.put("/api/save-token", authToken, userController.saveUserToken);
 
 module.exports = router;

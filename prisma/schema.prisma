@@ -18,6 +18,7 @@ model User {
   email      String   @unique
   password   String
   fullName   String
+  country    String?
   level      String   @default("Rookie") // Default level
   profilePicture  String?   @default("https://storage.googleapis.com/oohiq-bucket/user.png")
   role       Role
@@ -28,6 +29,7 @@ model User {
   approvedAudits  Int      @default(0)
   task            Int      @default(10) //Required number of task per level 
   walletBalance   Int      @default(0) // New field for user's wallet balance
+  pushToken       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   billboardEvaluation BillboardEvaluation[]
@@ -37,6 +39,9 @@ model User {
 enum Role {
   FIELD_AUDITOR // User with field auditing role
   ADMIN        // Admin user with elevated privileges
+  CLIENT 
+  MEDIA_OWNER
+  MODERATOR
 }
 
 model VerificationCode {
@@ -59,6 +64,8 @@ model Audit {
   location        String
   state           String
   town            String
+  country         String?
+  geolocation     Json?
   advertiser      Advertiser     @relation(fields: [advertiserId], references: [id])
   advertiserId    Int
   industry        Industry       @relation(fields: [industryId], references: [id])
@@ -97,6 +104,8 @@ model AuditHistory{
   location        String
   state           String
   town            String
+  country         String?
+  geolocation     Json?
   advertiser    String 
   industry      String
   category      String

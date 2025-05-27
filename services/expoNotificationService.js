@@ -44,17 +44,46 @@ const sendNewAuditNotification = async () => {
     }
 
     //Step 3. Chunk messages for Expo
-    let chunks = expo.chunkPushNotifications(messages)
-    let tickets = []
+    let chunks = expo.chunkPushNotifications(messages);
+    let tickets = [];
 
     //Step 4. Send notifications in chunks
     for (let chunk of chunks) {
-        try {
-            let ticketChunk = await expo.sendPushNotificationsAsync(chunk)
-            tickets.push(...ticketChunk)
-        } catch (error) {
-            console.error(`Failed to send chunk:`, error);
-        }
+      try {
+        let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+        tickets.push(...ticketChunk);
+      } catch (error) {
+        console.error(`Failed to send chunk:`, error);
+      }
     }
-  } catch (error) {}
+
+    //Step 5. Collect successful ticket Ids
+    let receiptIds = tickets
+      .filter((ticket) => ticket.status === "ok" && ticket.id)
+      .map((ticket) => ticket.id);
+
+    let receiptChunks = expo.chunkPushNotificationReceiptIds(receiptIds);
+
+    //Step 6. Get Develivery Receipts
+    for (let chunk of receiptChunks) {
+      try {
+        let receipts = await expo.getPushNotificationReceiptsAsync(chunk);
+        for (let receiptId in receipts) {
+          let { status, message, details } = receipts[receiptId];
+          if (status === "error") {
+            console.error(`Notification Error:${message}`);
+            if (details?.error) {
+              console.error(`Error Code:${details.error}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch receipts:", error);
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notifications:", error.message);
+  }
 };
+
+module.exports = { sendNewAuditNotification };
