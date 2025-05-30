@@ -8,10 +8,12 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const advertiserRoutes = require("./routes/advertiserRoutes");
 const evaluationParametersRoutes = require("./routes/evaluationParametersRoutes");
 const billboardEvaluationRoutes = require("./routes/billboardEvaluationRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes")
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const reauditRoutes = require("./routes/reauditRoutes")
 
 const app = express();
 require("dotenv").config();
+// require("./cron");
 
 app.use(
   cors({
@@ -36,6 +38,7 @@ app.use("/", advertiserRoutes);
 app.use("/", evaluationParametersRoutes);
 app.use("/", billboardEvaluationRoutes);
 app.use("/", analyticsRoutes);
+app.use("/", reauditRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

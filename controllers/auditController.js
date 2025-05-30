@@ -1,57 +1,10 @@
-const axios = require("axios");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const { Queue } = require("bullmq");
 const { updateUserLevel } = require("../Helpers/userLevel");
+const { auditQueue } = require("../Helpers/queue");
 const { generateBoardCode } = require("../Helpers/boardCode");
 const { subDays } = require("date-fns");
-
-async function getDetectedAddress(latitude, longitude) {
-  const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
-  const response = await axios.get(geocodeUrl);
-
-  if (response.data.status !== "OK") {
-    throw new Error("Failed to detect location address.");
-  }
-
-  const address =
-    response.data.results[0]?.formatted_address || "Unknown Address";
-  const addressComponents = response.data.results[0]?.address_components;
-
-  if (!addressComponents) {
-    return { state: "Unknown", city: "Unknown", country: "Unknown" };
-  }
-
-  let city = "Unknown";
-  let state = "Unknown";
-  let country = "Unknown";
-
-  for (const component of addressComponents) {
-    if (component.types.includes("administrative_area_level_1")) {
-      state = component.long_name;
-    }
-    if (
-      component.types.includes("locality") ||
-      component.types.includes("administrative_area_level_2")
-    ) {
-      city = component.long_name;
-    }
-    if (component.types.includes("country")) {
-      country = component.long_name;
-    }
-  }
-
-  return { address, state, city, country };
-}
-
-const auditQueue = new Queue("auditQueue", {
-  connection: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-    username: process.env.REDIS_USERNAME,
-    password: process.env.REDIS_PASSWORD,
-  },
-});
+const { getDetectedAddress } = require("../Helpers/detectAddress");
 
 exports.startAuditProcess = async (req, res) => {
   const {
@@ -169,12 +122,12 @@ const PAYMENT_PER_LEVEL = {
 exports.updateAuditStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // Status should be "approved" or "disapproved"
+    const { status } = req.body; // Status should be "APPROVED" or "DISAPPROVED"
 
-    if (!["approved", "disapproved"].includes(status)) {
+    if (!["APPROVED", "DISAPPROVED"].includes(status)) {
       return res
         .status(400)
-        .json({ error: "Invalid status. Use 'approved' or 'disapproved'." });
+        .json({ error: "Invalid status. Use 'APPROVED' or 'DISAPPROVED'." });
     }
 
     // Find the audit
@@ -187,6 +140,19 @@ exports.updateAuditStatus = async (req, res) => {
       return res.status(404).json({ error: "Audit not found" });
     }
 
+    //If disapproved, delete audit history and audit record
+    if (status === "disapproved") {
+      await prisma.auditHistory.deleteMany({
+        where: { id: parseInt(id) },
+      });
+
+      await prisma.audit.delete({
+        where: { id: parseInt(id) },
+      });
+
+      return res.json({ message: "Audit disapproved and removed", id });
+    }
+
     // Update audit status
     await prisma.audit.update({
       where: { id: parseInt(id) },
@@ -194,36 +160,34 @@ exports.updateAuditStatus = async (req, res) => {
     });
 
     // If approved, increment user's approved audits count
-    if (status === "approved") {
-      const user = audit.user;
-      const paymentAmount = PAYMENT_PER_LEVEL[user.level] || 0;
+    const user = audit.user;
+    const paymentAmount = PAYMENT_PER_LEVEL[user.level] || 0;
 
-      // Increment user's approved audits and credit wallet
-      const updatedUser = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          approvedAudits: { increment: 1 },
-          walletBalance: { increment: paymentAmount },
-        },
+    // Increment user's approved audits and credit wallet
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        approvedAudits: { increment: 1 },
+        walletBalance: { increment: paymentAmount },
+      },
+    });
+
+    console.log(
+      `User ${user.id} credited with ₦${paymentAmount} for approved audit.`
+    );
+
+    // Check if user qualifies for level upgrade or reset
+    await updateUserLevel(updatedUser.id);
+
+    //Assign Board Code If doesn't exist
+    if (!audit.boardCode) {
+      const boardCode = await generateBoardCode(prisma, id);
+      await prisma.audit.update({
+        where: { id: audit.id },
+        data: { boardCode },
       });
 
-      console.log(
-        `User ${user.id} credited with ₦${paymentAmount} for approved audit.`
-      );
-
-      // Check if user qualifies for level upgrade or reset
-      await updateUserLevel(updatedUser.id);
-
-      //Assign Board Code If doesn't exist
-      if (!audit.boardCode) {
-        const boardCode = await generateBoardCode(prisma);
-        await prisma.audit.update({
-          where: { id: audit.id },
-          data: { boardCode },
-        });
-
-        console.log(`Board code ${boardCode} assigned to Audit`);
-      }
+      console.log(`Board code ${boardCode} assigned to Audit`);
     }
 
     res.json({ message: `Audit ${status} successfully`, id, status });
@@ -313,7 +277,7 @@ exports.getPendingAudits = async (req, res) => {
     const skip = (pageNumber - 1) * limitNumber;
 
     // Fetch audits where status is "PENDING"
-    const whereCondition = { status: "pending" };
+    const whereCondition = { status: "PENDING" };
 
     if (role === "ADMIN" || "MODERATOR") {
       whereCondition.country = country;

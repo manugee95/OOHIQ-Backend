@@ -238,9 +238,10 @@ exports.evaluateBillboard = async (req, res) => {
     });
 
     //Calculate Site Grade and Score
-    siteScore =
+    totalSiteScore =
       clientAudit.impressionScore * 0.3 + finalScore * 0.5 + sovScore * 0.2;
 
+    siteScore = Math.round(totalSiteScore * 100) / 100;
     siteGrade = gradeSite(siteScore);
 
     //Update Audit History

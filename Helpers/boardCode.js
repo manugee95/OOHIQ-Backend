@@ -1,13 +1,25 @@
-async function generateBoardCode(prisma) {
+async function generateBoardCode(prisma, id) {
   let boardCode;
   let exists = true;
+
+  //Get state from the audit record
+  const audit = await prisma.audit.findUnique({
+    where: { id: parseInt(id) },
+    select: { state: true },
+  });
+
+  if (!audit || !audit.state) {
+    throw new Error("Audit not found or state missing");
+  }
+
+  const statePrefix = audit.state.slice(0, 3).toUpperCase();
 
   while (exists) {
     const randomDigits = String(Math.floor(Math.random() * 10000)).padStart(
       4,
       "0"
     );
-    boardCode = `TNMM-${randomDigits}`;
+    boardCode = `${statePrefix}-${randomDigits}`;
 
     const existing = await prisma.audit.findUnique({
       where: { boardCode },
@@ -19,4 +31,4 @@ async function generateBoardCode(prisma) {
   return boardCode;
 }
 
-module.exports = {generateBoardCode}
+module.exports = { generateBoardCode };

@@ -33,6 +33,8 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   billboardEvaluation BillboardEvaluation[]
+  reauditSchedule     ReauditSchedule[]
+  reauditSubmission  ReauditSubmission[]
 }
 
 // Enum to represent user roles
@@ -85,12 +87,14 @@ model Audit {
   closeShotUrl    String
   longShotUrl     String
   videoUrl        String
-  status          String         @default("pending")
+  status          SubmissionStatus @default(PENDING)
   objectCounts    Json?
   impressionScore Float 
   sovScore        Float? 
   billboardEvaluation   BillboardEvaluation?
   audits          AuditHistory[]
+  reauditSchedule ReauditSchedule[]
+  reauditSubmission  ReauditSubmission[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -283,4 +287,43 @@ model CompetitiveBoardType{
 
   billboardEvaluation       BillboardEvaluation @relation(fields: [billboardEvaluationId], references: [id])
   billboardType             BillboardType   @relation(fields: [billboardTypeId], references: [id])
+}
+
+model ReauditSchedule{
+  id              Int   @id @default(autoincrement())
+  auditId         Int 
+  scheduledFor    DateTime 
+  status          ScheduleStatus
+  acceptedBy      Int?
+  acceptedAt      DateTime?
+  expiresAt       DateTime?
+
+  audit           Audit @relation(fields: [auditId], references: [id])
+  acceptedUser    User?  @relation(fields: [acceptedBy], references: [id])
+}
+
+model ReauditSubmission {
+  id              Int    @id @default(autoincrement())
+  reauditId       Int 
+  userId          Int
+  auditId         Int
+  data            Json
+  createdAt       DateTime @default(now())
+  status          SubmissionStatus @default(PENDING) 
+
+  audit           Audit @relation(fields: [auditId], references: [id])
+  user            User  @relation(fields: [userId], references: [id])
+}
+
+enum ScheduleStatus{
+  PENDING 
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED 
+}
+
+enum SubmissionStatus{
+  PENDING 
+  APPROVED 
+  DISAPPROVED
 }
