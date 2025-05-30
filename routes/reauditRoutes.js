@@ -46,4 +46,11 @@ router.put(
   reauditsController.updateReauditStatus
 );
 
+router.get(
+  "/api/pending-reaudits",
+  authToken,
+  authRole("ADMIN"),
+  reauditsController.getPendingReaudits
+);
+
 module.exports = router;

@@ -8,5 +8,9 @@ module.exports = {
       name: "worker",
       script: "utils/worker.js",
     },
+    {
+      name: "reauditWorker",
+      script: "utils/reauditWorker.js"
+    }
   ],
 };

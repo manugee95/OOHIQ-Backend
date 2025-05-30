@@ -476,3 +476,68 @@ exports.expireOverdueReaudits = async (req, res) => {
     console.error("Error expiring reaudits:", error);
   }
 };
+
+exports.getPendingReaudits = async (req, res) => {
+  try {
+    const { country, page = 1, limit = 10 } = req.query;
+
+    if (!country) {
+      return res.status(400).json("Country is required");
+    }
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    //Get Paginated data
+    const [pendingReaudits, total] = await Promise.all([
+      prisma.reauditSubmission.findMany({
+        where: {
+          status: "PENDING",
+          audit: {
+            country: {
+              equals: country,
+              mode: "insensitive",
+            }, //Case insensitive
+          },
+        },
+        include: {
+          audit: true,
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            },
+          },
+        },
+        skip,
+        take: limitNumber,
+      }),
+
+      //Get total count
+      prisma.reauditSubmission.count({
+        where: {
+          status: "PENDING",
+          audit: {
+            country: {
+              equals: country,
+              mode: "insensitive",
+            },
+          },
+        },
+      }),
+    ]);
+
+    res.json({
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+      pendingReaudits,
+    });
+  } catch (error) {
+    console.error("error fetching audits by country", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

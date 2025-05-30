@@ -13,7 +13,7 @@ const reauditRoutes = require("./routes/reauditRoutes")
 
 const app = express();
 require("dotenv").config();
-// require("./cron");
+require("./cron");
 
 app.use(
   cors({

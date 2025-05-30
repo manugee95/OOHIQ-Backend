@@ -213,7 +213,7 @@ exports.getAudits = async (req, res) => {
     if (role === "ADMIN") {
       //Admins filter: By selected country
       whereCondition = {
-        country: country,
+        country: { equals: country, mode: "insensitive" },
       };
     } else {
       // Regular user: Only fetch audits from the last 7 days
@@ -279,8 +279,8 @@ exports.getPendingAudits = async (req, res) => {
     // Fetch audits where status is "PENDING"
     const whereCondition = { status: "PENDING" };
 
-    if (role === "ADMIN" || "MODERATOR") {
-      whereCondition.country = country;
+    if (role === "ADMIN") {
+      whereCondition.country = { equals: country, mode: "insensitive" };
     }
 
     const [pendingAudits, total] = await Promise.all([
