@@ -93,9 +93,6 @@ exports.acceptReaudit = async (req, res) => {
       where: {
         id: parseInt(reauditId),
         status: "PENDING",
-        scheduledFor: {
-          lte: now,
-        },
       },
     });
 
@@ -106,8 +103,7 @@ exports.acceptReaudit = async (req, res) => {
     }
 
     //Set expiresAt to 6pm of the scheduled day
-    const scheduledDate = new Date(schedule.scheduledFor);
-    const expiresAt = set(scheduledDate, {
+    const expiresAt = set(now, {
       hours: 22,
       minutes: 0,
       seconds: 0,
@@ -539,5 +535,29 @@ exports.getPendingReaudits = async (req, res) => {
   } catch (error) {
     console.error("error fetching audits by country", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getAcceptedReaudits = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+
+    const acceptedReaudit = await prisma.reauditSchedule.findFirst({
+      where: { acceptedBy: userId, status: "IN_PROGRESS" },
+      include: {
+        audit: true,
+      },
+    });
+
+    if (!acceptedReaudit) {
+      return res
+        .status(404)
+        .json({ message: "You have no pending reaudits at this time." });
+    }
+
+    res.json({ data: acceptedReaudit });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -53,4 +53,10 @@ router.get(
   reauditsController.getPendingReaudits
 );
 
+router.get(
+  "/api/get-accepted-reaudits",
+  authToken,
+  reauditsController.getAcceptedReaudits
+);
+
 module.exports = router;

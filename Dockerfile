@@ -3,6 +3,7 @@ FROM node:18-slim
 
 # 2. Install dependencies including ImageMagick and FFmpeg
 RUN apt-get update && \
+    apt-get install -y procps && \
     apt-get install -y imagemagick ffmpeg && \
     ln -s /usr/bin/convert /usr/bin/magick && \
     npm install -g pm2 && \

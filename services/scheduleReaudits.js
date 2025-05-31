@@ -1,5 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
-const { subDays, startOfMonth, subHours, subMinutes } = require("date-fns");
+const { startOfMonth, subMinutes } = require("date-fns");
 
 const prisma = new PrismaClient();
 
@@ -32,7 +32,7 @@ const scheduleReaudits = async () => {
 
       //Step 3: Schedule for today 8:00am
       const scheduledTime = new Date();
-      scheduledTime.setHours(9, 0, 0, 0);
+      scheduledTime.setHours(8, 0, 0, 0);
 
       await prisma.reauditSchedule.create({
         data: {
