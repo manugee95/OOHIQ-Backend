@@ -43,7 +43,6 @@ enum Role {
   ADMIN        // Admin user with elevated privileges
   CLIENT 
   MEDIA_OWNER
-  MODERATOR
 }
 
 model VerificationCode {

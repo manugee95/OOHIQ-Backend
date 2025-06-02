@@ -1,13 +1,13 @@
 const { PrismaClient } = require("@prisma/client");
-const { startOfMonth, subMinutes } = require("date-fns");
+const { startOfMonth, subMinutes, subDays } = require("date-fns");
 
 const prisma = new PrismaClient();
 
 const scheduleReaudits = async () => {
   try {
     const today = new Date();
-    // const lastWeek = subDays(today, 7);
-    const last = subMinutes(today, 10);
+    const last = subDays(today, 1);
+    // const last = subMinutes(today, 10);
     const monthStart = startOfMonth(today);
 
     //Step 1: Get Audits not updated in the last 7 days

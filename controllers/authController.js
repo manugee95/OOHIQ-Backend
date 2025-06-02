@@ -3,18 +3,21 @@ const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const { transporter } = require("../Helpers/email");
 const { profileToGCS } = require("../Helpers/gcs");
+const { generateRandomPassword, sendEmail } = require("../Helpers/mailer");
 
 const prisma = new PrismaClient();
 
 //Sign up a new user
 exports.signup = async (req, res) => {
-  const { email, password, fullName, role } = req.body;
+  const { email, password, fullName, role, country } = req.body;
 
   // Validation
-  if (!email || !password || !fullName || !role) {
-    return res.status(400).json({
-      message: "All fields (email, password, name, role) are required.",
-    });
+  const requiredFields = { email, password, fullName, role, country };
+
+  for (const [key, value] of Object.entries(requiredFields)) {
+    if (!value) {
+      return res.status(400).json(`${key} is required`);
+    }
   }
 
   if (!/^\S+@\S+\.\S+$/.test(email)) {
@@ -61,6 +64,7 @@ exports.signup = async (req, res) => {
         password: hashedPassword,
         fullName,
         role,
+        country,
       },
     });
 
@@ -88,8 +92,65 @@ exports.signup = async (req, res) => {
   }
 };
 
-//User Login
-exports.login = async (req, res) => {
+//Admin to create client and media owner user
+exports.createUser = async (req, res) => {
+  try {
+    const { fullName, email, password, role, country } = req.body;
+
+    const requiredFields = { fullName, email, password, role, country };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value) {
+        return res.status(400).json(`${key} is required`);
+      }
+    }
+
+    const normalizedEmail = email.toLowerCase();
+
+    //Check for existing user
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ error: "User with this email already exist!" });
+    }
+
+    //Generate Password and hash it
+    const generatedPassword = generateRandomPassword();
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+    //Create user
+    const newUser = await prisma.user.create({
+      data: {
+        fullName,
+        email,
+        password: hashedPassword,
+        role,
+        country,
+      },
+    });
+
+    //Send account creation email
+    await sendEmail(
+      normalizedEmail,
+      "Your OOHIQ Account Details",
+      `Your account has been created. Here is your login information: 
+      Email - ${normalizedEmail} 
+      Password - ${generatedPassword}`
+    );
+
+    res.status(201).json(newUser);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+//Field Auditor Login
+exports.mobileLogin = async (req, res) => {
   const { email, password } = req.body;
 
   // Validation
@@ -116,6 +177,10 @@ exports.login = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
+    if (user.role !== "FIELD_AUDITOR") {
+      return res.status(403).json("You can only login as a field auditor");
+    }
+
     // Verify the password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -137,6 +202,65 @@ exports.login = async (req, res) => {
         email: user.email,
         name: user.fullName,
         level: user.level,
+        role: user.role,
+      },
+      google_api_key: process.env.GOOGLE_MAPS_API_KEY,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error logging in.", error });
+  }
+};
+
+//Web login for admin, client and media owner
+exports.webLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const requiredFields = { email, password };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value) {
+        return res.status(400).json(`${key} is required`);
+      }
+    }
+
+    // Convert email to lowercase for case-insensitive lookup
+    const normalizedEmail = email.toLowerCase();
+
+    // Find the user (case-insensitive search)
+    const user = await prisma.user.findFirst({
+      where: { email: normalizedEmail },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.role === "FIELD_AUDITOR") {
+      return res.status(403).json("You are not authorized to access this page");
+    }
+
+    // Verify the password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    // Generate a JWT token
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "12h" }
+    );
+
+    res.status(200).json({
+      message: "Login successful.",
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.fullName,
         role: user.role,
       },
       google_api_key: process.env.GOOGLE_MAPS_API_KEY,

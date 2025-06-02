@@ -7,7 +7,7 @@ cron.schedule(
   "0 6 * * *",
   async () => {
     await scheduleReaudits();
-    console.log("Running 12:00 lagos time");
+    console.log("Running 6:00am lagos time");
   },
   {
     timezone: "Africa/Lagos",
@@ -15,6 +15,6 @@ cron.schedule(
 );
 
 //Expire audits by 6pm
-cron.schedule("0 22 * * *", async () => {
+cron.schedule("0 18 * * *", async () => {
   await expireOverdueReaudits();
 });
