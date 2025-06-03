@@ -228,7 +228,7 @@ exports.completeReaudit = async (req, res) => {
         longShotPath: longShotFile.path,
         videoPath: videoFile.path,
         reauditId: parseInt(reauditId),
-      },
+      }
       // {
       //   timeout: 15 * 60 * 1000, // 15 minutes
       //   removeOnComplete: true,
@@ -564,6 +564,28 @@ exports.getAcceptedReaudits = async (req, res) => {
     }
 
     res.json({ data: acceptedReaudit });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+exports.viewReaudit = async (req, res) => {
+  try {
+    const { id: reauditId } = req.params;
+
+    const reaudit = await prisma.reauditSubmission.findUnique({
+      where: { id: parseInt(reauditId) },
+      include: {
+        audit: true,
+      },
+    });
+
+    if (!reaudit) {
+      return res.status(404).json({ error: "No reaudit found" });
+    }
+
+    res.json(reaudit);
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Internal server error" });

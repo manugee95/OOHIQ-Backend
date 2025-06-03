@@ -42,7 +42,7 @@ router.post(
 router.put(
   "/api/update-reaudit-status/:id",
   authToken,
-  authRole(["ADMIN", "MODERATOR"]),
+  authRole("ADMIN"),
   reauditsController.updateReauditStatus
 );
 
@@ -58,5 +58,7 @@ router.get(
   authToken,
   reauditsController.getAcceptedReaudits
 );
+
+router.get("/api/view-reaudit/:id", authToken, reauditsController.viewReaudit)
 
 module.exports = router;
