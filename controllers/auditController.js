@@ -75,27 +75,30 @@ exports.startAuditProcess = async (req, res) => {
     }
 
     //IMMEDIATE RESPONSE TO CLIENT
-    const job = await auditQueue.add("processAudit", {
-      userId: parseInt(userId),
-      billboardTypeId: parseInt(billboardTypeId),
-      advertiserId: parseInt(advertiserId),
-      industryId: parseInt(industryId),
-      categoryId: parseInt(categoryId),
-      boardConditionId: parseInt(boardConditionId),
-      posterConditionId: parseInt(posterConditionId),
-      trafficSpeedId: parseInt(trafficSpeedId),
-      evaluationTimeId: parseInt(evaluationTimeId),
-      brand,
-      brandIdentifier,
-      detectedAddress,
-      state,
-      town,
-      country,
-      geolocation,
-      closeShotPath: closeShotFile.path,
-      longShotPath: longShotFile.path,
-      videoPath: videoFile.path,
-    });
+    const job = await auditQueue.add(
+      "processAudit",
+      {
+        userId: parseInt(userId),
+        billboardTypeId: parseInt(billboardTypeId),
+        advertiserId: parseInt(advertiserId),
+        industryId: parseInt(industryId),
+        categoryId: parseInt(categoryId),
+        boardConditionId: parseInt(boardConditionId),
+        posterConditionId: parseInt(posterConditionId),
+        trafficSpeedId: parseInt(trafficSpeedId),
+        evaluationTimeId: parseInt(evaluationTimeId),
+        brand,
+        brandIdentifier,
+        detectedAddress,
+        state,
+        town,
+        country,
+        geolocation,
+        closeShotPath: closeShotFile.path,
+        longShotPath: longShotFile.path,
+        videoPath: videoFile.path,
+      },
+    );
 
     return res.status(201).json({
       message: "Task submitted for processing.",

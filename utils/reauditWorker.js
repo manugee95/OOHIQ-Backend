@@ -1,4 +1,5 @@
 const { Worker } = require("bullmq");
+const { Redis } = require("ioredis");
 const { uploadToGCS, convertToGcsUri } = require("../Helpers/gcs");
 const { analyzeVideoObjects } = require("../Helpers/analyzeVideo");
 const extractImageMetadata = require("../Helpers/metadata");
@@ -7,6 +8,12 @@ const { convertImageToJpg } = require("../Helpers/conversion");
 const { impressionScore } = require("../Helpers/impressions");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+
+require("dotenv").config();
+
+const connection = new Redis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: null, 
+});
 
 const reauditWorker = new Worker(
   "reauditQueue",
@@ -164,12 +171,12 @@ const reauditWorker = new Worker(
     }
   },
   {
-    connection: {
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
-      username: process.env.REDIS_USERNAME,
-      password: process.env.REDIS_PASSWORD,
-    },
+    connection,
+    lockDuration: 300000, // 5 minutes
+    concurrency: 1,
+    autorun: true,
+    stalledInterval: 30000, // Check for stalled jobs every 30s
+    maxStalledCount: 2,
   }
 );
 

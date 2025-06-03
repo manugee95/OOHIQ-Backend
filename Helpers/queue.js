@@ -1,20 +1,13 @@
 const { Queue } = require("bullmq");
+const { Redis } = require("ioredis");
+require("dotenv").config();
 
-const auditQueue = new Queue("auditQueue", {
-  connection: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-    username: process.env.REDIS_USERNAME,
-    password: process.env.REDIS_PASSWORD,
-  },
-});
-const reauditQueue = new Queue("reauditQueue", {
-  connection: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-    username: process.env.REDIS_USERNAME,
-    password: process.env.REDIS_PASSWORD,
-  },
+const connection = new Redis(process.env.REDIS_URL, {
+  maxRetriesPerRequest: null, 
 });
 
-module.exports = {auditQueue, reauditQueue}
+const auditQueue = new Queue("auditQueue", { connection });
+
+const reauditQueue = new Queue("reauditQueue", { connection });
+
+module.exports = { auditQueue, reauditQueue };

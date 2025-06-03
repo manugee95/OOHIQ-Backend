@@ -211,22 +211,30 @@ exports.completeReaudit = async (req, res) => {
     const videoFile = video[0];
 
     //IMMEDIATE RESPONSE TO CLIENT
-    const job = await reauditQueue.add("processReaudit", {
-      userId: parseInt(userId),
-      advertiserId: parseInt(advertiserId),
-      industryId: parseInt(industryId),
-      categoryId: parseInt(categoryId),
-      boardConditionId: parseInt(boardConditionId),
-      posterConditionId: parseInt(posterConditionId),
-      trafficSpeedId: parseInt(trafficSpeedId),
-      evaluationTimeId: parseInt(evaluationTimeId),
-      brand,
-      brandIdentifier,
-      closeShotPath: closeShotFile.path,
-      longShotPath: longShotFile.path,
-      videoPath: videoFile.path,
-      reauditId: parseInt(reauditId),
-    });
+    const job = await reauditQueue.add(
+      "processReaudit",
+      {
+        userId: parseInt(userId),
+        advertiserId: parseInt(advertiserId),
+        industryId: parseInt(industryId),
+        categoryId: parseInt(categoryId),
+        boardConditionId: parseInt(boardConditionId),
+        posterConditionId: parseInt(posterConditionId),
+        trafficSpeedId: parseInt(trafficSpeedId),
+        evaluationTimeId: parseInt(evaluationTimeId),
+        brand,
+        brandIdentifier,
+        closeShotPath: closeShotFile.path,
+        longShotPath: longShotFile.path,
+        videoPath: videoFile.path,
+        reauditId: parseInt(reauditId),
+      },
+      // {
+      //   timeout: 15 * 60 * 1000, // 15 minutes
+      //   removeOnComplete: true,
+      //   removeOnFail: true,
+      // }
+    );
 
     return res.status(201).json({
       message: "Task submitted for processing.",
