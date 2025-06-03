@@ -12,7 +12,6 @@ exports.getAnalyticsOverview = async (req, res) => {
       totalClients,
       totalMediaOwners,
       totalFieldAuditors,
-      totalModerators,
     ] = await Promise.all([
       prisma.audit.count({ where: { country: selectedCountry } }),
       prisma.auditHistory.count({ where: { country: selectedCountry } }),
@@ -24,10 +23,7 @@ exports.getAnalyticsOverview = async (req, res) => {
       }),
       prisma.user.count({
         where: { role: "FIELD_AUDITOR", country: selectedCountry },
-      }),
-      prisma.user.count({
-        where: { role: "MODERATOR", country: selectedCountry },
-      }),
+      })
     ]);
 
     res.status(200).json({
@@ -35,8 +31,7 @@ exports.getAnalyticsOverview = async (req, res) => {
       totalAudits: totalAudits,
       totalClients: totalClients,
       totalMediaOwners: totalMediaOwners,
-      totalFieldAuditors: totalFieldAuditors,
-      totalModerators: totalModerators,
+      totalFieldAuditors: totalFieldAuditors
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch analytics data" });
