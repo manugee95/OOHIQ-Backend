@@ -139,6 +139,7 @@ exports.completeReaudit = async (req, res) => {
       longitude,
       advertiserId,
       industryId,
+      billboardTypeId,
       categoryId,
       brand,
       brandIdentifier,
@@ -156,6 +157,7 @@ exports.completeReaudit = async (req, res) => {
       latitude,
       longitude,
       advertiserId,
+      billboardTypeId,
       industryId,
       categoryId,
       brand,
@@ -222,6 +224,7 @@ exports.completeReaudit = async (req, res) => {
         posterConditionId: parseInt(posterConditionId),
         trafficSpeedId: parseInt(trafficSpeedId),
         evaluationTimeId: parseInt(evaluationTimeId),
+        billboardTypeId: parseInt(billboardTypeId),
         brand,
         brandIdentifier,
         closeShotPath: closeShotFile.path,
@@ -577,7 +580,26 @@ exports.viewReaudit = async (req, res) => {
     const reaudit = await prisma.reauditSubmission.findUnique({
       where: { id: parseInt(reauditId) },
       include: {
-        audit: true,
+        audit: {
+          include: {
+            billboardType: true,
+            billboardEvaluation: {
+              select: {
+                roadType: true,
+                vehicularTraffic: true,
+                pedestrianTraffic: true,
+                distanceOfVisibility: true,
+                boardPositioning: true,
+                boardLevel: true,
+                visibilityPoints: true,
+                specialFeatures: true,
+                noOfBoardsInView: true,
+                noOfCompetitiveBoards: true,
+                noOfLargerBoards: true,
+              },
+            },
+          },
+        },
         user: {
           select: {
             id: true,
@@ -602,6 +624,7 @@ exports.viewReaudit = async (req, res) => {
       posterConditionId,
       trafficSpeedId,
       evaluationTimeId,
+      billboardTypeId,
     } = reaudit.data;
 
     // Fetch the name values from related tables

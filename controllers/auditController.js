@@ -341,7 +341,21 @@ exports.viewAudit = async (req, res) => {
         posterCondition: { select: { name: true } },
         trafficSpeed: { select: { name: true } },
         evaluationTime: { select: { name: true } },
-        billboardEvaluation: true
+        billboardEvaluation: {
+          include: {
+            roadType: true,
+            vehicularTraffic: true,
+            pedestrianTraffic: true,
+            distanceOfVisibility: true,
+            boardPositioning: true,
+            boardLevel: true,
+            visibilityPoints: true,
+            specialFeatures: true,
+            noOfBoardsInView: true,
+            noOfCompetitiveBoards: true,
+            noOfLargerBoards: true
+          },
+        },
       },
     });
 
