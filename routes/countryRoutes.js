@@ -11,6 +11,6 @@ router.post(
   countryController.createCountry
 );
 
-router.get("/api/get-countries", authToken, countryController.getCountries);
+router.get("/api/get-countries", countryController.getCountries);
 
 module.exports = router;
