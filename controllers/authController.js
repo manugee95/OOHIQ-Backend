@@ -407,7 +407,7 @@ exports.getUser = async (req, res) => {
 
 //Update User Account
 exports.updateUser = async (req, res) => {
-  const { id } = req.params; // User ID to update
+  const { id } = req.user; 
   const { fullName } = req.body;
 
   try {

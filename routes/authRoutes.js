@@ -19,7 +19,7 @@ router.get(
   userController.getFieldAuditors
 );
 router.put(
-  "/user/:id",
+  "/api/user",
   authToken,
   upload.single("profilePicture"),
   userController.updateUser
