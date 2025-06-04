@@ -13,7 +13,7 @@ exports.getAnalyticsOverview = async (req, res) => {
       totalMediaOwners,
       totalFieldAuditors,
     ] = await Promise.all([
-      prisma.audit.count({ where: { country: selectedCountry } }),
+      prisma.audit.count({ where: { country: selectedCountry, status: "APPROVED" } }),
       prisma.auditHistory.count({ where: { country: selectedCountry } }),
       prisma.user.count({
         where: { role: "CLIENT", country: selectedCountry },

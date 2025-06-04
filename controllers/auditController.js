@@ -75,30 +75,27 @@ exports.startAuditProcess = async (req, res) => {
     }
 
     //IMMEDIATE RESPONSE TO CLIENT
-    const job = await auditQueue.add(
-      "processAudit",
-      {
-        userId: parseInt(userId),
-        billboardTypeId: parseInt(billboardTypeId),
-        advertiserId: parseInt(advertiserId),
-        industryId: parseInt(industryId),
-        categoryId: parseInt(categoryId),
-        boardConditionId: parseInt(boardConditionId),
-        posterConditionId: parseInt(posterConditionId),
-        trafficSpeedId: parseInt(trafficSpeedId),
-        evaluationTimeId: parseInt(evaluationTimeId),
-        brand,
-        brandIdentifier,
-        detectedAddress,
-        state,
-        town,
-        country,
-        geolocation,
-        closeShotPath: closeShotFile.path,
-        longShotPath: longShotFile.path,
-        videoPath: videoFile.path,
-      },
-    );
+    const job = await auditQueue.add("processAudit", {
+      userId: parseInt(userId),
+      billboardTypeId: parseInt(billboardTypeId),
+      advertiserId: parseInt(advertiserId),
+      industryId: parseInt(industryId),
+      categoryId: parseInt(categoryId),
+      boardConditionId: parseInt(boardConditionId),
+      posterConditionId: parseInt(posterConditionId),
+      trafficSpeedId: parseInt(trafficSpeedId),
+      evaluationTimeId: parseInt(evaluationTimeId),
+      brand,
+      brandIdentifier,
+      detectedAddress,
+      state,
+      town,
+      country,
+      geolocation,
+      closeShotPath: closeShotFile.path,
+      longShotPath: longShotFile.path,
+      videoPath: videoFile.path,
+    });
 
     return res.status(201).json({
       message: "Task submitted for processing.",
@@ -358,5 +355,39 @@ exports.viewAudit = async (req, res) => {
   } catch (error) {
     console.error("Error fetching audit:", error);
     res.status(500).json({ success: false, error: "Failed to fetch audit" });
+  }
+};
+
+exports.getAllBoards = async (req, res) => {
+  try {
+    const { country, page = 1, limit = 10 } = req.query;
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const whereCondition = { status: "APPROVED", country: country };
+
+    const [boards, total] = await Promise.all([
+      prisma.audit.findMany({
+        where: whereCondition,
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limitNumber,
+      }),
+
+      prisma.audit.count({ where: whereCondition }),
+    ]);
+
+    res.json({
+      page: pageNumber,
+      limit: limitNumber,
+      total,
+      totalPages: Math.ceil(total / limitNumber),
+      boards,
+    });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

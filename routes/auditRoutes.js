@@ -43,6 +43,7 @@ router.get(
   authRole("ADMIN"),
   auditController.getPendingAudits
 );
+router.get("/api/all-boards", authToken, auditController.getAllBoards)
 
 
 module.exports = router;
