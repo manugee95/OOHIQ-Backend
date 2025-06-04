@@ -578,6 +578,14 @@ exports.viewReaudit = async (req, res) => {
       where: { id: parseInt(reauditId) },
       include: {
         audit: true,
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            profilePicture: true,
+          },
+        },
       },
     });
 
@@ -585,7 +593,49 @@ exports.viewReaudit = async (req, res) => {
       return res.status(404).json({ error: "No reaudit found" });
     }
 
-    res.json(reaudit);
+    // Extract IDs from data field
+    const {
+      advertiserId,
+      industryId,
+      categoryId,
+      boardConditionId,
+      posterConditionId,
+      trafficSpeedId,
+      evaluationTimeId,
+    } = reaudit.data;
+
+    // Fetch the name values from related tables
+    const [
+      advertiser,
+      industry,
+      category,
+      boardCondition,
+      posterCondition,
+      trafficSpeed,
+      evaluationTime,
+    ] = await Promise.all([
+      prisma.advertiser.findUnique({ where: { id: advertiserId } }),
+      prisma.industry.findUnique({ where: { id: industryId } }),
+      prisma.category.findUnique({ where: { id: categoryId } }),
+      prisma.boardCondition.findUnique({ where: { id: boardConditionId } }),
+      prisma.posterCondition.findUnique({ where: { id: posterConditionId } }),
+      prisma.trafficSpeed.findUnique({ where: { id: trafficSpeedId } }),
+      prisma.evaluationTime.findUnique({ where: { id: evaluationTimeId } }),
+    ]);
+
+    res.json({
+      ...reaudit,
+      data: {
+        ...reaudit.data,
+        advertiserName: advertiser?.name || null,
+        industryName: industry?.name || null,
+        categoryName: category?.name || null,
+        boardConditionName: boardCondition?.name || null,
+        posterConditionName: posterCondition?.name || null,
+        trafficSpeedName: trafficSpeed?.name || null,
+        evaluationTimeName: evaluationTime?.name || null,
+      },
+    });
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: "Internal server error" });
