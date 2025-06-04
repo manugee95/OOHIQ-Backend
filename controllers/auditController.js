@@ -341,6 +341,7 @@ exports.viewAudit = async (req, res) => {
         posterCondition: { select: { name: true } },
         trafficSpeed: { select: { name: true } },
         evaluationTime: { select: { name: true } },
+        billboardEvaluation: true
       },
     });
 
