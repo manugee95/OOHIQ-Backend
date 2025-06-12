@@ -4,7 +4,7 @@ const { expireOverdueReaudits } = require("./controllers/reauditsController");
 
 //Runs once a day at 6AM to schedule eligible locations for re-audit
 cron.schedule(
-  "0 6 * * *",
+  "05 8 * * *",
   async () => {
     await scheduleReaudits();
     console.log("Running 6:00am lagos time");

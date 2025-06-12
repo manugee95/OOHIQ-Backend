@@ -11,6 +11,7 @@ const billboardEvaluationRoutes = require("./routes/billboardEvaluationRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const reauditRoutes = require("./routes/reauditRoutes");
 const countryRoutes = require("./routes/countryRoutes");
+const campaignRoutes = require("./routes/campaignRoutes");
 
 const app = express();
 require("dotenv").config();
@@ -41,6 +42,7 @@ app.use("/", billboardEvaluationRoutes);
 app.use("/", analyticsRoutes);
 app.use("/", reauditRoutes);
 app.use("/", countryRoutes);
+app.use("/", campaignRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

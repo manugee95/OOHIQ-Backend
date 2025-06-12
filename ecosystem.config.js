@@ -11,6 +11,10 @@ module.exports = {
     {
       name: "reauditWorker",
       script: "utils/reauditWorker.js"
+    },
+    {
+      name: "addedAuditWorker",
+      script: "utils/addedAuditWorker.js"
     }
   ],
 };

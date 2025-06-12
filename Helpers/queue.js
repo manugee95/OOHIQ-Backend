@@ -10,4 +10,6 @@ const auditQueue = new Queue("auditQueue", { connection });
 
 const reauditQueue = new Queue("reauditQueue", { connection });
 
-module.exports = { auditQueue, reauditQueue };
+const addedQueue = new Queue("addedQueue", { connection });
+
+module.exports = { auditQueue, reauditQueue, addedQueue };

@@ -104,7 +104,7 @@ exports.acceptReaudit = async (req, res) => {
 
     //Set expiresAt to 6pm of the scheduled day
     const expiresAt = set(now, {
-      hours: 22,
+      hours: 18,
       minutes: 0,
       seconds: 0,
       milliseconds: 0,
@@ -232,11 +232,6 @@ exports.completeReaudit = async (req, res) => {
         videoPath: videoFile.path,
         reauditId: parseInt(reauditId),
       }
-      // {
-      //   timeout: 15 * 60 * 1000, // 15 minutes
-      //   removeOnComplete: true,
-      //   removeOnFail: true,
-      // }
     );
 
     return res.status(201).json({

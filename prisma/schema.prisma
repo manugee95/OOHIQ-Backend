@@ -32,9 +32,12 @@ model User {
   pushToken       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
   billboardEvaluation BillboardEvaluation[]
   reauditSchedule     ReauditSchedule[]
   reauditSubmission  ReauditSubmission[]
+  AuditSchedule       AuditSchedule[]
+  campaign           Campaign[]
 }
 
 // Enum to represent user roles
@@ -43,6 +46,20 @@ enum Role {
   ADMIN        // Admin user with elevated privileges
   CLIENT 
   MEDIA_OWNER
+}
+
+enum ScheduleStatus{
+  PENDING 
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+}
+
+enum SubmissionStatus{
+  PENDING 
+  APPROVED 
+  DISAPPROVED
+  ADDED
 }
 
 model VerificationCode {
@@ -57,43 +74,44 @@ model VerificationCode {
 
 model Audit {
   id              Int            @id @default(autoincrement())
-  user            User           @relation(fields: [userId], references: [id])
-  userId          Int
+  user            User?           @relation(fields: [userId], references: [id])
+  userId          Int?
   boardCode       String?        @unique
-  billboardType   BillboardType  @relation(fields: [billboardTypeId], references: [id])
-  billboardTypeId Int
-  location        String
-  state           String
-  town            String
+  billboardType   BillboardType?  @relation(fields: [billboardTypeId], references: [id])
+  billboardTypeId Int?
+  location        String?
+  state           String?
+  town            String?
   country         String?
   geolocation     Json?
-  advertiser      Advertiser     @relation(fields: [advertiserId], references: [id])
-  advertiserId    Int
-  industry        Industry       @relation(fields: [industryId], references: [id])
-  industryId      Int
-  category        Category       @relation(fields: [categoryId], references: [id])
-  categoryId      Int
-  brand           String
-  brandIdentifier String
-  boardCondition  BoardCondition  @relation(fields: [boardConditionId], references: [id])
-  boardConditionId  Int 
-  posterCondition PosterCondition @relation(fields: [posterConditionId], references: [id]) 
-  posterConditionId Int 
-  trafficSpeedId    Int  
-  trafficSpeed      TrafficSpeed  @relation(fields: [trafficSpeedId], references: [id])
-  evaluationTimeId  Int
-  evaluationTime    EvaluationTime  @relation(fields: [evaluationTimeId], references: [id])
-  closeShotUrl    String
-  longShotUrl     String
-  videoUrl        String
+  advertiser      Advertiser?     @relation(fields: [advertiserId], references: [id])
+  advertiserId    Int?
+  industry        Industry?       @relation(fields: [industryId], references: [id])
+  industryId      Int?
+  category        Category?       @relation(fields: [categoryId], references: [id])
+  categoryId      Int?
+  brand           String?
+  brandIdentifier String?
+  boardCondition  BoardCondition?  @relation(fields: [boardConditionId], references: [id])
+  boardConditionId  Int?
+  posterCondition PosterCondition? @relation(fields: [posterConditionId], references: [id]) 
+  posterConditionId Int?
+  trafficSpeedId    Int?  
+  trafficSpeed      TrafficSpeed?  @relation(fields: [trafficSpeedId], references: [id])
+  evaluationTimeId  Int?
+  evaluationTime    EvaluationTime?  @relation(fields: [evaluationTimeId], references: [id])
+  closeShotUrl    String?
+  longShotUrl     String?
+  videoUrl        String?
   status          SubmissionStatus @default(PENDING)
   objectCounts    Json?
-  impressionScore Float 
+  impressionScore Float? 
   sovScore        Float? 
   billboardEvaluation   BillboardEvaluation?
   audits          AuditHistory[]
   reauditSchedule ReauditSchedule[]
   reauditSubmission  ReauditSubmission[]
+  auditSchedule     AuditSchedule[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -319,15 +337,27 @@ model ReauditSubmission {
   user            User  @relation(fields: [userId], references: [id])
 }
 
-enum ScheduleStatus{
-  PENDING 
-  IN_PROGRESS
-  COMPLETED
-  EXPIRED 
+model Campaign{
+  id          Int     @id @default(autoincrement())
+  clientId    Int 
+  siteList    Json 
+  totalSites  Int 
+  campaignId  String 
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  client      User     @relation(fields: [clientId], references: [id])
 }
 
-enum SubmissionStatus{
-  PENDING 
-  APPROVED 
-  DISAPPROVED
+model AuditSchedule{
+  id              Int   @id @default(autoincrement())
+  auditId         Int 
+  scheduledFor    DateTime 
+  status          ScheduleStatus
+  acceptedBy      Int?
+  acceptedAt      DateTime?
+  expiresAt       DateTime?
+
+  audit           Audit @relation(fields: [auditId], references: [id])
+  acceptedUser    User?  @relation(fields: [acceptedBy], references: [id])
 }
