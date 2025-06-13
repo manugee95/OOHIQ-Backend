@@ -14,13 +14,13 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const media = multer({ storage });
 
 // Route for starting an audit process
 router.post(
   "/new-audit",
   authToken,
-  upload.fields([
+  media.fields([
     { name: "closeShot", maxCount: 1 },
     { name: "longShot", maxCount: 1 },
     { name: "video", maxCount: 1 },

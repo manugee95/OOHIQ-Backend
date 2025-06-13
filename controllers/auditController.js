@@ -5,6 +5,7 @@ const { auditQueue } = require("../Helpers/queue");
 const { generateBoardCode } = require("../Helpers/boardCode");
 const { subDays } = require("date-fns");
 const { getDetectedAddress } = require("../Helpers/detectAddress");
+const {uploadToGCS} = require("../Helpers/gcs")
 
 exports.startAuditProcess = async (req, res) => {
   const {
@@ -56,6 +57,11 @@ exports.startAuditProcess = async (req, res) => {
     const longShotFile = longShot[0];
     const videoFile = video[0];
 
+    //Upload File to GCS
+    // const closeShotGcsUrl = await uploadToGCS(closeShotFile.path);
+    // const longShotGcsUrl = await uploadToGCS(longShotFile.path);
+    // const videoGcsUrl = await uploadToGCS(videoFile.path);
+
     // Get address (cache results if needed)
     const addressInfo = await getDetectedAddress(latitude, longitude);
     const detectedAddress = addressInfo.address;
@@ -94,7 +100,7 @@ exports.startAuditProcess = async (req, res) => {
       geolocation,
       closeShotPath: closeShotFile.path,
       longShotPath: longShotFile.path,
-      videoPath: videoFile.path,
+      videoPath: videoFile.path
     });
 
     return res.status(201).json({
@@ -248,18 +254,18 @@ exports.getAudits = async (req, res) => {
           evaluationTime: { select: { name: true } },
           billboardEvaluation: {
             include: {
-              roadType: {select: {name: true}},
-              vehicularTraffic: {select: {name: true}},
-              pedestrianTraffic: {select: {name: true}},
-              distanceOfVisibility: {select: {name: true}},
-              boardPositioning: {select: {name: true}},
-              boardLevel: {select: {name: true}},
-              visibilityPoints: {select: {name: true}},
-              specialFeatures: {select: {name: true}},
-              noOfBoardsInView: {select: {name: true}},
-              noOfCompetitiveBoards: {select: {name: true}},
-              noOfLargerBoards: {select: {name: true}},
-            }
+              roadType: { select: { name: true } },
+              vehicularTraffic: { select: { name: true } },
+              pedestrianTraffic: { select: { name: true } },
+              distanceOfVisibility: { select: { name: true } },
+              boardPositioning: { select: { name: true } },
+              boardLevel: { select: { name: true } },
+              visibilityPoints: { select: { name: true } },
+              specialFeatures: { select: { name: true } },
+              noOfBoardsInView: { select: { name: true } },
+              noOfCompetitiveBoards: { select: { name: true } },
+              noOfLargerBoards: { select: { name: true } },
+            },
           },
         },
       }),

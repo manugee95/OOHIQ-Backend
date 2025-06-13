@@ -1,6 +1,6 @@
 const { Worker } = require("bullmq");
 const { Redis } = require("ioredis");
-const { uploadToGCS, convertToGcsUri } = require("../Helpers/gcs");
+const { uploadToGCS, convertToGcsUri, downloadToTemp } = require("../Helpers/gcs");
 const { analyzeVideoObjects } = require("../Helpers/analyzeVideo");
 const extractImageMetadata = require("../Helpers/metadata");
 const { addWatermarkToImage } = require("../Helpers/watermark");
@@ -14,7 +14,7 @@ const prisma = new PrismaClient();
 require("dotenv").config();
 
 const connection = new Redis(process.env.REDIS_URL, {
-  maxRetriesPerRequest: null, 
+  maxRetriesPerRequest: null,
 });
 
 const auditWorker = new Worker(
@@ -44,6 +44,11 @@ const auditWorker = new Worker(
       } = job.data;
 
       console.log(`Processing audit job ${job.id}...`);
+
+      // Download files to /tmp directory
+      // const closeShotPath = await downloadToTemp(closeShotGcsUrl, "close");
+      // const longShotPath = await downloadToTemp(longShotGcsUrl, "long");
+      // const videoPath = await downloadToTemp(videoGcsUrl, "video");
 
       //Extract metadata
       const metadataCloseShot = await extractImageMetadata(closeShotPath);

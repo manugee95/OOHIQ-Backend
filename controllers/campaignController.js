@@ -566,7 +566,7 @@ exports.acceptAudit = async (req, res) => {
 
     //Set expiresAt to 6pm of the scheduled day
     const expiresAt = set(now, {
-      hours: 18,
+      hours: 23,
       minutes: 0,
       seconds: 0,
       milliseconds: 0,
