@@ -48,30 +48,54 @@ const addedAuditWorker = new Worker(
 
       console.log(`Processing added audit job ${job.id}...`);
 
-      //Extract metadata
-      const metadataCloseShot = await extractImageMetadata(closeShotPath);
-      const metadataLongShot = await extractImageMetadata(longShotPath);
+      // //Extract metadata
+      // const metadataCloseShot = await extractImageMetadata(closeShotPath);
+      // const metadataLongShot = await extractImageMetadata(longShotPath);
 
-      //Convert Image
-      const closeJpg = await convertImageToJpg(closeShotPath);
-      const longJpg = await convertImageToJpg(longShotPath);
+      // //Convert Image
+      // const closeJpg = await convertImageToJpg(closeShotPath);
+      // const longJpg = await convertImageToJpg(longShotPath);
 
-      //Watermark with metadata and address
-      const watermarkedClose = await addWatermarkToImage(
-        closeJpg,
-        metadataCloseShot,
-        detectedAddress
-      );
-      const watermarkedLong = await addWatermarkToImage(
-        longJpg,
-        metadataLongShot,
-        detectedAddress
-      );
+      // //Watermark with metadata and address
+      // const watermarkedClose = await addWatermarkToImage(
+      //   closeJpg,
+      //   metadataCloseShot,
+      //   detectedAddress
+      // );
+      // const watermarkedLong = await addWatermarkToImage(
+      //   longJpg,
+      //   metadataLongShot,
+      //   detectedAddress
+      // );
 
       //Upload files concurrently
-      const closeShotUrl = await uploadToGCS(watermarkedClose);
-      const longShotUrl = await uploadToGCS(watermarkedLong);
+      const rawCloseShot = await uploadToGCS(closeShotPath);
+      const rawLongShot = await uploadToGCS(longShotPath);
       const rawVideoUrl = await uploadToGCS(videoPath);
+
+      //Google cloud function to convert and watermark Images
+      const convertAndWatermarkImageServiceUrl =
+        "https://process-image-714918758794.us-central1.run.app/process-image";
+
+      const res = await fetch(convertAndWatermarkImageServiceUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          closeShotUrl: rawCloseShot,
+          longShotUrl: rawLongShot,
+          address: detectedAddress,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("GCF Error:", res.status, errorText);
+        throw new Error("Failed to process Images via GCF");
+      }
+
+      const { closeShotProcessedUrl, longShotProcessedUrl } = await res.json();
+      const closeShotUrl = closeShotProcessedUrl;
+      const longShotUrl = longShotProcessedUrl;
 
       //Google cloud function to convert and watermark video
       const convertAndWatermarkServiceUrl =
@@ -182,7 +206,7 @@ const addedAuditWorker = new Worker(
 
       //Update Audit Schedule table
       await prisma.auditSchedule.update({
-        where: { id: parseInt(auditScheduleId )},
+        where: { id: parseInt(auditScheduleId) },
         data: {
           status: "COMPLETED",
         },
