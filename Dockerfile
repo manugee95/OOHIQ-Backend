@@ -1,12 +1,11 @@
 # 1. Use the official lightweight Node.js image
-FROM node:18-slim
+FROM node:20-slim
 
 # 2. Install required system dependencies for PM2 (procps) and cleanup
 RUN apt-get update && \
     apt-get install -y \
       procps \
       openssl \
-      libssl1.1 \
       ca-certificates && \
     npm install -g pm2 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
