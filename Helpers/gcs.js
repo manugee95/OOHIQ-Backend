@@ -114,18 +114,4 @@ function convertToGcsUri(publicUrl) {
   return `gs://${match[1]}/${match[2]}`;
 }
 
-const downloadToTemp = async (fileUrl, prefix) => {
-  const tempPath = path.join("/tmp", `${prefix}-${uuidv4()}.jpg`);
-  const response = await axios.get(fileUrl, { responseType: "stream" });
-
-  const writer = fs.createWriteStream(tempPath);
-
-  return new Promise((resolve, reject) => {
-    response.data
-      .pipe(writer)
-      .on("finish", () => resolve(tempPath))
-      .on("error", reject);
-  });
-};
-
-module.exports = { uploadToGCS, convertToGcsUri, profileToGCS, downloadToTemp };
+module.exports = { uploadToGCS, convertToGcsUri, profileToGCS };

@@ -18,6 +18,18 @@ router.get(
   authRole(["ADMIN"]),
   userController.getFieldAuditors
 );
+router.get(
+  "/user/clients",
+  authToken,
+  authRole(["ADMIN"]),
+  userController.getClients
+);
+router.get(
+  "/user/media_owners",
+  authToken,
+  authRole(["ADMIN"]),
+  userController.getMediaOwners
+);
 router.put(
   "/api/user",
   authToken,

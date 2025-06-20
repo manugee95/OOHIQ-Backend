@@ -1,10 +1,7 @@
 const { Worker } = require("bullmq");
 const { Redis } = require("ioredis");
-const { uploadToGCS, convertToGcsUri, downloadToTemp } = require("../Helpers/gcs");
+const { uploadToGCS, convertToGcsUri } = require("../Helpers/gcs");
 const { analyzeVideoObjects } = require("../Helpers/analyzeVideo");
-const extractImageMetadata = require("../Helpers/metadata");
-const { addWatermarkToImage } = require("../Helpers/watermark");
-const { convertImageToJpg } = require("../Helpers/conversion");
 const { impressionScore } = require("../Helpers/impressions");
 const {
   sendNewAuditNotification,
@@ -24,9 +21,6 @@ const auditWorker = new Worker(
       const {
         userId,
         billboardTypeId,
-        advertiserId,
-        industryId,
-        categoryId,
         boardConditionId,
         posterConditionId,
         trafficSpeedId,
@@ -44,26 +38,6 @@ const auditWorker = new Worker(
       } = job.data;
 
       console.log(`Processing audit job ${job.id}...`);
-
-      // //Extract metadata
-      // const metadataCloseShot = await extractImageMetadata(closeShotPath);
-      // const metadataLongShot = await extractImageMetadata(longShotPath);
-
-      // //Convert Image
-      // const closeJpg = await convertImageToJpg(closeShotPath);
-      // const longJpg = await convertImageToJpg(longShotPath);
-
-      // //Watermark with metadata and address
-      // const watermarkedClose = await addWatermarkToImage(
-      //   closeJpg,
-      //   metadataCloseShot,
-      //   detectedAddress
-      // );
-      // const watermarkedLong = await addWatermarkToImage(
-      //   longJpg,
-      //   metadataLongShot,
-      //   detectedAddress
-      // );
 
       //Upload files concurrently
       const rawCloseShot = await uploadToGCS(closeShotPath);
@@ -124,9 +98,6 @@ const auditWorker = new Worker(
       const [
         trafficSpeed,
         evaluationTime,
-        advertiser,
-        industry,
-        category,
         boardCondition,
         posterCondition,
         billboardType,
@@ -137,18 +108,6 @@ const auditWorker = new Worker(
         }),
         prisma.evaluationTime.findUnique({
           where: { id: parseInt(evaluationTimeId) },
-          select: { name: true },
-        }),
-        prisma.advertiser.findUnique({
-          where: { id: parseInt(advertiserId) },
-          select: { name: true },
-        }),
-        prisma.industry.findUnique({
-          where: { id: parseInt(industryId) },
-          select: { name: true },
-        }),
-        prisma.category.findUnique({
-          where: { id: parseInt(categoryId) },
           select: { name: true },
         }),
         prisma.boardCondition.findUnique({
@@ -177,9 +136,6 @@ const auditWorker = new Worker(
         data: {
           userId,
           billboardTypeId,
-          advertiserId,
-          industryId,
-          categoryId,
           boardConditionId,
           posterConditionId,
           trafficSpeedId,
@@ -204,9 +160,6 @@ const auditWorker = new Worker(
         data: {
           auditId: newAudit.id,
           billboardType: billboardType.name,
-          advertiser: advertiser.name,
-          industry: industry.name,
-          category: category.name,
           boardCondition: boardCondition.name,
           posterCondition: posterCondition.name,
           trafficSpeed: trafficSpeed.name,

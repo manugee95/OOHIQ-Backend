@@ -87,6 +87,12 @@ router.get("/api/campaigns", authToken, campaignController.fetchCampaign);
 
 router.get("/api/campaign/:id", authToken, campaignController.viewCampaign);
 
+router.get(
+  "/api/campaign/:campaignId/site/:siteCode",
+  authToken,
+  campaignController.viewSingleSiteAudit
+);
+
 router.delete(
   "/api/campaign/:id",
   authToken,

@@ -309,6 +309,35 @@ exports.scheduleAudit = async (req, res) => {
         },
       });
 
+      // Create audit history
+      await prisma.auditHistory.create({
+        data: {
+          auditId: createdAudit.id,
+          billboardType: boardType,
+          location,
+          state,
+          town,
+          advertiser: "Unknown",
+          industry: "Unknown",
+          category: category,
+          brand: "Unknown",
+          brandIdentifier: "Unknown",
+          boardCondition: "Unknown",
+          posterCondition: "Unknown",
+          trafficSpeed: "Unknown",
+          evaluationTime: "Unknown",
+          closeShotUrl: "",
+          longShotUrl: "",
+          videoUrl: "",
+          objectCounts: {},
+          impressionScore: 0,
+          geolocation: {
+            latitude: parseFloat(latitude),
+            longitude: parseFloat(longitude),
+          },
+        },
+      });
+
       // Schedule audit for re-audit
       const scheduledTime = new Date();
       scheduledTime.setHours(8, 0, 0, 0); // schedule for 8 AM today
@@ -586,7 +615,7 @@ exports.acceptAudit = async (req, res) => {
       },
     });
 
-    res.json({ reaudit: updated });
+    res.json({ newAudit: updated });
   } catch (error) {
     res.status(500).json({ error: "Server error" });
     console.error(error.message);
@@ -706,7 +735,7 @@ exports.completeAudit = async (req, res) => {
       longShotPath: longShotFile.path,
       videoPath: videoFile.path,
       auditId: auditSchedule.audit.id,
-      auditScheduleId: auditScheduleId
+      auditScheduleId: auditScheduleId,
     });
 
     return res.status(201).json({
@@ -748,7 +777,7 @@ exports.getAcceptedAddedAudits = async (req, res) => {
 exports.fetchCampaign = async (req, res) => {
   try {
     const { role, id: userId } = req.user;
-    const { page = 1, limit = 1 } = req.query;
+    const { page = 1, limit = 10 } = req.query;
 
     const pageNumber = parseInt(page);
     const limitNumber = parseInt(limit);
@@ -822,9 +851,32 @@ exports.viewCampaign = async (req, res) => {
       req.user.role === "ADMIN" ||
       (req.user.role === "CLIENT" && campaign.clientId === req.user.id)
     ) {
+      const siteList = campaign.siteList || [];
+
+      // Count each existStatus
+      let existent = 0;
+      let nonExistent = 0;
+      let unknown = 0;
+
+      for (const site of siteList) {
+        const status = (site.existStatus || "").toLowerCase();
+        if (status === "existent") {
+          existent++;
+        } else if (status === "non-existent") {
+          nonExistent++;
+        } else {
+          unknown++;
+        }
+      }
+
       return res.status(200).json({
         campaign,
-        siteList: campaign.siteList,
+        stats: {
+          totalSites: siteList.length,
+          existent,
+          nonExistent,
+          unknown,
+        },
       });
     } else {
       return res.status(403).json({
@@ -835,6 +887,124 @@ exports.viewCampaign = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Error retrieving campaign." });
+  }
+};
+
+exports.viewSingleSiteAudit = async (req, res) => {
+  try {
+    const { campaignId, siteCode } = req.params;
+
+    if (!campaignId || !siteCode) {
+      return res
+        .status(400)
+        .json({ error: "Campaign ID and Site Code are required" });
+    }
+
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: parseInt(campaignId) },
+    });
+
+    if (!campaign) {
+      return res.status(404).json({ error: "Campaign not found" });
+    }
+
+    const site = campaign.siteList?.find(
+      (s) => s.code === siteCode && s.existStatus === "Existent"
+    );
+
+    if (!site) {
+      return res
+        .status(404)
+        .json({ error: "Site not found or not marked as existent" });
+    }
+
+    const GEO_TOLERANCE = 0.0001;
+
+    const boardType = await prisma.billboardType.findFirst({
+      where: {
+        name: { equals: site.boardType, mode: "insensitive" },
+      },
+    });
+
+    const category = await prisma.category.findFirst({
+      where: {
+        name: { equals: site.category, mode: "insensitive" },
+      },
+    });
+
+    if (!boardType || !category) {
+      return res
+        .status(404)
+        .json({ error: "Billboard type or category not found" });
+    }
+
+    const matchingAudits = await prisma.audit.findMany({
+      where: {
+        billboardTypeId: boardType.id,
+        categoryId: category.id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+        billboardType: { select: { name: true } },
+        advertiser: { select: { name: true } },
+        industry: { select: { name: true } },
+        category: { select: { name: true } },
+        boardCondition: { select: { name: true } },
+        posterCondition: { select: { name: true } },
+        trafficSpeed: { select: { name: true } },
+        evaluationTime: { select: { name: true } },
+        billboardEvaluation: {
+          include: {
+            roadType: { select: { name: true } },
+            vehicularTraffic: { select: { name: true } },
+            pedestrianTraffic: { select: { name: true } },
+            distanceOfVisibility: { select: { name: true } },
+            boardPositioning: { select: { name: true } },
+            boardLevel: { select: { name: true } },
+            visibilityPoints: { select: { name: true } },
+            specialFeatures: { select: { name: true } },
+            noOfBoardsInView: { select: { name: true } },
+            noOfCompetitiveBoards: { select: { name: true } },
+            noOfLargerBoards: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    const matchedAudit = matchingAudits.find((audit) => {
+      const geo = Array.isArray(audit.geolocation)
+        ? audit.geolocation[0]
+        : null;
+      if (!geo) return false;
+
+      const auditLat = parseFloat(geo.latitude);
+      const auditLng = parseFloat(geo.longitude);
+      const siteLat = parseFloat(site.latitude);
+      const siteLng = parseFloat(site.longitude);
+
+      return (
+        Math.abs(auditLat - siteLat) <= GEO_TOLERANCE &&
+        Math.abs(auditLng - siteLng) <= GEO_TOLERANCE
+      );
+    });
+
+    if (!matchedAudit) {
+      return res.status(404).json({ error: "No audit found for this site" });
+    }
+
+    return res.status(200).json({
+      site,
+      audit: matchedAudit,
+    });
+  } catch (error) {
+    console.error("Error fetching single site audit:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

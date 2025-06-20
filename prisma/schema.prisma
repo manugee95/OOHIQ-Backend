@@ -128,9 +128,9 @@ model AuditHistory{
   town            String
   country         String?
   geolocation     Json?
-  advertiser    String 
-  industry      String
-  category      String
+  advertiser    String?
+  industry      String?
+  category      String?
   brand           String
   brandIdentifier String
   boardCondition  String 
@@ -141,6 +141,7 @@ model AuditHistory{
   longShotUrl     String
   videoUrl        String
   objectCounts    Json
+  status          SubmissionStatus @default(PENDING)
   impressionScore Float 
   sovScore        Float? 
   ltsScore        Float?

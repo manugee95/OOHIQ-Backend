@@ -498,3 +498,79 @@ exports.getFieldAuditors = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch field auditors" });
   }
 };
+
+exports.getClients = async(req, res)=>{
+  try {
+    let { page, limit } = req.query;
+
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch clients with pagination
+    const [clients, total] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: "CLIENT" },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profilePicture: true,
+        },
+        take: limit,
+        skip,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.user.count({ where: { role: "CLIENT" } }),
+    ]);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      clients,
+    });
+  } catch (error) {
+    console.error("Error fetching field clients:", error);
+    res.status(500).json({ error: "Failed to fetch field clients" });
+  }
+}
+
+exports.getMediaOwners = async(req, res)=>{
+  try {
+    let { page, limit } = req.query;
+
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Fetch clients with pagination
+    const [mediaOwners, total] = await Promise.all([
+      prisma.user.findMany({
+        where: { role: "MEDIA_OWNER" },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profilePicture: true,
+        },
+        take: limit,
+        skip,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.user.count({ where: { role: "MEDIA_OWNER" } }),
+    ]);
+
+    res.json({
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      mediaOwners,
+    });
+  } catch (error) {
+    console.error("Error fetching field media owners:", error);
+    res.status(500).json({ error: "Failed to fetch field media owners" });
+  }
+}

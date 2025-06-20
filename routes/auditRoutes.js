@@ -36,14 +36,28 @@ router.put(
 );
 
 router.get("/audits", authToken, auditController.getAudits);
+
 router.get("/audits/:id", authToken, auditController.viewAudit);
+
 router.get(
   "/pending-audits",
   authToken,
   authRole("ADMIN"),
   auditController.getPendingAudits
 );
-router.get("/api/all-boards", authToken, auditController.getAllBoards)
 
+router.get("/api/all-boards", authToken, auditController.getAllBoards);
+
+router.get(
+  "/api/audit-history/:auditId",
+  authToken,
+  auditController.getAuditHistory
+);
+
+router.get(
+  "/api/view-audit-history/:auditHistoryId",
+  authToken,
+  auditController.viewSingleAuditHistory
+);
 
 module.exports = router;
