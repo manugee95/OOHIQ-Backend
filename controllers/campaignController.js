@@ -828,7 +828,56 @@ exports.fetchCampaign = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ error: "An error occured while adding sites" });
+      .json({ error: "An error occured while fetching client" });
+  }
+};
+
+exports.fetchClientCampaign = async (req, res) => {
+  try {
+    const { id: clientId } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    // Fetch total count
+    const totalCampaigns = await prisma.campaign.count({
+      where: { clientId: parseInt(clientId) },
+    });
+
+    const campaigns = await prisma.campaign.findMany({
+      where: { clientId: parseInt(clientId) },
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!campaigns) {
+      return res.status(404).json({ error: "Client not found" });
+    }
+
+    return res.status(200).json({
+      currentPage: page,
+      totalPages: Math.ceil(totalCampaigns / limit),
+      totalCampaigns,
+      campaigns,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: "An error occured while fetching client campaign" });
   }
 };
 

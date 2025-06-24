@@ -85,6 +85,13 @@ router.get(
 
 router.get("/api/campaigns", authToken, campaignController.fetchCampaign);
 
+router.get(
+  "/api/client/:id/campaigns",
+  authToken,
+  authRole("ADMIN"),
+  campaignController.fetchClientCampaign
+);
+
 router.get("/api/campaign/:id", authToken, campaignController.viewCampaign);
 
 router.get(

@@ -95,9 +95,9 @@ exports.signup = async (req, res) => {
 //Admin to create client and media owner user
 exports.createUser = async (req, res) => {
   try {
-    const { fullName, email, password, role, country } = req.body;
+    const { fullName, email, role, country } = req.body;
 
-    const requiredFields = { fullName, email, password, role, country };
+    const requiredFields = { fullName, email, role, country };
 
     for (const [key, value] of Object.entries(requiredFields)) {
       if (!value) {
