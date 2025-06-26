@@ -30,7 +30,8 @@ function impressionScore({ trafficSpeed, evaluationTime, objectCounts }) {
     (objectCounts.car || 0) +
     (objectCounts.bus || 0) +
     (objectCounts.truck || 0) +
-    (objectCounts.motorcycle || 0);
+    (objectCounts.motorcycle || 0) +
+    (objectCounts.scooter || 0);
   const pedestrianCount = objectCounts.person || 0;
 
   const speedScore = scoreTrafficSpeed(trafficSpeed);
