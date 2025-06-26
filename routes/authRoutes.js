@@ -12,7 +12,6 @@ router.post("/api/web-login", userController.webLogin)
 router.post("/reset-password", userController.resetPassword);
 router.post("/forgot-password", userController.forgotPassword);
 router.get("/user/detail", authToken, userController.getUser);
-router.get("/user/:id", authToken, authRole("ADMIN"), userController.getUserById);
 router.get(
   "/user/field-auditor",
   authToken,
@@ -31,6 +30,7 @@ router.get(
   authRole(["ADMIN"]),
   userController.getMediaOwners
 );
+router.get("/api/user/:id", authToken, authRole("ADMIN"), userController.getUserById);
 router.put(
   "/api/user",
   authToken,

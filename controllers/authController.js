@@ -487,7 +487,7 @@ exports.saveUserToken = async (req, res) => {
 
 exports.getFieldAuditors = async (req, res) => {
   try {
-    let { page, limit } = req.query;
+    let { page, limit, country } = req.query;
 
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
@@ -496,7 +496,10 @@ exports.getFieldAuditors = async (req, res) => {
     // Fetch field auditors with pagination
     const [auditors, total] = await Promise.all([
       prisma.user.findMany({
-        where: { role: "FIELD_AUDITOR" },
+        where: {
+          role: "FIELD_AUDITOR",
+          country: { equals: country, mode: "insensitive" },
+        },
         select: {
           id: true,
           fullName: true,
@@ -510,7 +513,12 @@ exports.getFieldAuditors = async (req, res) => {
         skip,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.user.count({ where: { role: "FIELD_AUDITOR" } }),
+      prisma.user.count({
+        where: {
+          role: "FIELD_AUDITOR",
+          country: { equals: country, mode: "insensitive" },
+        },
+      }),
     ]);
 
     res.json({
@@ -528,7 +536,7 @@ exports.getFieldAuditors = async (req, res) => {
 
 exports.getClients = async (req, res) => {
   try {
-    let { page, limit } = req.query;
+    let { page, limit, country } = req.query;
 
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
@@ -537,7 +545,10 @@ exports.getClients = async (req, res) => {
     // Fetch clients with pagination
     const [clients, total] = await Promise.all([
       prisma.user.findMany({
-        where: { role: "CLIENT" },
+        where: {
+          role: "CLIENT",
+          country: { equals: country, mode: "insensitive" },
+        },
         select: {
           id: true,
           fullName: true,
@@ -548,7 +559,12 @@ exports.getClients = async (req, res) => {
         skip,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.user.count({ where: { role: "CLIENT" } }),
+      prisma.user.count({
+        where: {
+          role: "CLIENT",
+          country: { equals: country, mode: "insensitive" },
+        },
+      }),
     ]);
 
     res.json({
@@ -566,7 +582,7 @@ exports.getClients = async (req, res) => {
 
 exports.getMediaOwners = async (req, res) => {
   try {
-    let { page, limit } = req.query;
+    let { page, limit, country } = req.query;
 
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
@@ -575,7 +591,10 @@ exports.getMediaOwners = async (req, res) => {
     // Fetch clients with pagination
     const [mediaOwners, total] = await Promise.all([
       prisma.user.findMany({
-        where: { role: "MEDIA_OWNER" },
+        where: {
+          role: "MEDIA_OWNER",
+          country: { equals: country, mode: "insensitive" },
+        },
         select: {
           id: true,
           fullName: true,
@@ -586,7 +605,12 @@ exports.getMediaOwners = async (req, res) => {
         skip,
         orderBy: { createdAt: "desc" },
       }),
-      prisma.user.count({ where: { role: "MEDIA_OWNER" } }),
+      prisma.user.count({
+        where: {
+          role: "MEDIA_OWNER",
+          country: { equals: country, mode: "insensitive" },
+        },
+      }),
     ]);
 
     res.json({
